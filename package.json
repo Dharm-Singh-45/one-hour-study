@@ -1,0 +1,28 @@
+{
+  "name": "onehourstudy",
+  "version": "1.0.0",
+  "description": "OneHourStudy - Connecting Students with Expert Tutors",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "seo:check": "lighthouse http://localhost:3000 --only-categories=seo --output=html --output-path=./seo-report.html --chrome-flags=\"--headless\"",
+    "seo:check-all": "lighthouse http://localhost:3000 --only-categories=seo --output=html --output-path=./seo-report.html && lighthouse http://localhost:3000/student-register --only-categories=seo --output=html --output-path=./seo-report-student.html && lighthouse http://localhost:3000/teacher-register --only-categories=seo --output=html --output-path=./seo-report-teacher.html && lighthouse http://localhost:3000/pricing --only-categories=seo --output=html --output-path=./seo-report-pricing.html && lighthouse http://localhost:3000/faq --only-categories=seo --output=html --output-path=./seo-report-faq.html && lighthouse http://localhost:3000/contact --only-categories=seo --output=html --output-path=./seo-report-contact.html"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.5",
+    "typescript": "^5.2.2"
+  }
+}
+
