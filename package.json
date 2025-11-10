@@ -7,22 +7,40 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "jest --config=jest.e2e.config.js --runInBand",
+    "test:e2e:watch": "jest --config=jest.e2e.config.js --watch --runInBand",
+    "test:e2e:headed": "HEADLESS=false jest --config=jest.e2e.config.js --runInBand",
     "seo:check": "lighthouse http://localhost:3000 --only-categories=seo --output=html --output-path=./seo-report.html --chrome-flags=\"--headless\"",
     "seo:check-all": "lighthouse http://localhost:3000 --only-categories=seo --output=html --output-path=./seo-report.html && lighthouse http://localhost:3000/student-register --only-categories=seo --output=html --output-path=./seo-report-student.html && lighthouse http://localhost:3000/teacher-register --only-categories=seo --output=html --output-path=./seo-report-teacher.html && lighthouse http://localhost:3000/pricing --only-categories=seo --output=html --output-path=./seo-report-pricing.html && lighthouse http://localhost:3000/faq --only-categories=seo --output=html --output-path=./seo-report-faq.html && lighthouse http://localhost:3000/contact --only-categories=seo --output=html --output-path=./seo-report-contact.html"
   },
   "dependencies": {
     "next": "^14.0.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "twilio": "^5.10.4"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
+    "@types/puppeteer": "^5.4.7",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.16",
+    "ignore-loader": "^0.1.2",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
+    "jest-environment-puppeteer": "^11.0.0",
+    "jest-puppeteer": "^11.0.0",
+    "lighthouse": "^13.0.1",
     "postcss": "^8.4.31",
+    "puppeteer": "^24.29.0",
     "tailwindcss": "^3.3.5",
     "typescript": "^5.2.2"
   }
 }
-
