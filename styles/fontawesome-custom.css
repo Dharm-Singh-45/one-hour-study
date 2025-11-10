@@ -1,0 +1,79 @@
+/* Custom Font Awesome CSS - Only includes icons we actually use */
+/* This reduces CSS from 18.2 KiB to ~2-3 KiB */
+
+/* Base Font Awesome styles */
+@font-face {
+  font-family: 'Font Awesome 6 Free';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Font Awesome 6 Brands';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-brands-400.woff2') format('woff2');
+}
+
+.fas, .fa-solid {
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+}
+
+.fab, .fa-brands {
+  font-family: 'Font Awesome 6 Brands';
+  font-weight: 400;
+}
+
+/* Only include the icons we actually use */
+.fa-book::before { content: "\f02d"; }
+.fa-book-reader::before { content: "\f5da"; }
+.fa-briefcase::before { content: "\f0b1"; }
+.fa-calendar::before { content: "\f133"; }
+.fa-certificate::before { content: "\f0a3"; }
+.fa-chalkboard-teacher::before { content: "\f51c"; }
+.fa-check::before { content: "\f00c"; }
+.fa-check-circle::before { content: "\f058"; }
+.fa-chevron-down::before { content: "\f078"; }
+.fa-clock::before { content: "\f017"; }
+.fa-comment::before { content: "\f075"; }
+.fa-credit-card::before { content: "\f09d"; }
+.fa-dollar-sign::before { content: "\f155"; }
+.fa-envelope::before { content: "\f0e0"; }
+.fa-graduation-cap::before { content: "\f19d"; }
+.fa-headset::before { content: "\f590"; }
+.fa-info-circle::before { content: "\f05a"; }
+.fa-lock::before { content: "\f023"; }
+.fa-map-marker-alt::before { content: "\f3c5"; }
+.fa-paper-plane::before { content: "\f1d8"; }
+.fa-phone::before { content: "\f095"; }
+.fa-rupee-sign::before { content: "\e142"; }
+.fa-search::before { content: "\f002"; }
+.fa-sign-in-alt::before { content: "\f2f6"; }
+.fa-spinner::before { content: "\f110"; }
+.fa-star::before { content: "\f005"; }
+.fa-tag::before { content: "\f02b"; }
+.fa-times::before { content: "\f00d"; }
+.fa-user::before { content: "\f007"; }
+.fa-user-graduate::before { content: "\f501"; }
+.fa-user-plus::before { content: "\f234"; }
+.fa-user-slash::before { content: "\f506"; }
+.fa-user-tie::before { content: "\f508"; }
+.fa-users::before { content: "\f0c0"; }
+
+/* Brand icons */
+.fa-whatsapp::before { content: "\f232"; }
+
+/* Spinner animation */
+.fa-spin {
+  animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
