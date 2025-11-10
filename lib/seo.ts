@@ -14,14 +14,14 @@ export const siteConfig = {
 
 export const pageSEO = {
   home: {
-    title: 'Home Tutors in Jodhpur | OneHourStudy - Class 1-12 & Extracurricular Activities',
-    description: 'Find qualified home tutors in Jodhpur, Rajasthan for all subjects from class 1 to 12 and extracurricular activities. Home tuition services available in all areas of Jodhpur city. Register now to find expert tutors near you!',
-    keywords: 'home tutors in Jodhpur, home tuition Jodhpur, private tutors Jodhpur, tuition teachers Jodhpur Rajasthan, home tutors Jodhpur city, class 1 to 12 tutors Jodhpur, extracurricular activities tutors Jodhpur, best tutors in Jodhpur, qualified tutors Jodhpur, tutor near me Jodhpur, home tuition services Jodhpur, one hour study Jodhpur',
+    title: 'Best Home Tutor in Jodhpur | Private Tutor Near Me | OneHourStudy',
+    description: 'Find the best home tutor in Jodhpur for all subjects class 1-12. Experienced private tutors, personal tutors, and tuition teachers available. Affordable home tuition in Jodhpur city. One-to-one tutor, CBSE, RBSE, ICSE board tutors. Register now!',
+    keywords: 'home tutor in Jodhpur, private tutor in Jodhpur, tuition teacher in Jodhpur, best home tutor in Jodhpur, personal tutor in Jodhpur, tutor near me in Jodhpur, home tuition in Jodhpur, best tuition classes in Jodhpur, one-to-one tutor in Jodhpur, experienced home tutor in Jodhpur, home tutor for class 1 to 5 in Jodhpur, home tutor for class 6 to 8 in Jodhpur, home tutor for class 9 and 10 in Jodhpur, home tutor for class 11 and 12 in Jodhpur, tutor for CBSE board in Jodhpur, tutor for RBSE board in Jodhpur, ICSE home tutor in Jodhpur, maths home tutor in Jodhpur, science home tutor in Jodhpur, english home tutor in Jodhpur, hindi tutor in Jodhpur, physics tutor in Jodhpur, chemistry tutor in Jodhpur, biology tutor in Jodhpur, commerce tutor in Jodhpur, best home tutor in Jodhpur for all subjects, affordable home tuition in Jodhpur, experienced tutors for class 1 to 12 in Jodhpur, female home tutor in Jodhpur, male home tutor in Jodhpur, top-rated home tuition near me in Jodhpur, home tutor available in Jodhpur city area, personalized learning tutor in Jodhpur, best tutor for weak students in Jodhpur, result-oriented home tutor in Jodhpur, one-to-one teaching in Jodhpur, door-to-door tutor in Jodhpur, school subject tuition in Jodhpur, private coaching at home in Jodhpur, home tuition service in Jodhpur, trusted home tutor in Jodhpur',
   },
   studentRegister: {
-    title: 'Student Registration Jodhpur - Find Home Tutors | OneHourStudy',
-    description: 'Register as a student in Jodhpur and find qualified home tutors for all subjects from class 1 to 12 and extracurricular activities. Home tuition available in all areas of Jodhpur city. Join now!',
-    keywords: 'student registration Jodhpur, find tutor Jodhpur, register student Jodhpur Rajasthan, home tuition registration Jodhpur, find teacher Jodhpur, tutor registration Jodhpur',
+    title: 'Find Best Home Tutor in Jodhpur - Student Registration | OneHourStudy',
+    description: 'Register as a student and find the best home tutor in Jodhpur for all subjects class 1-12. Find private tutors, personal tutors, and tuition teachers near you. Affordable home tuition in Jodhpur city. CBSE, RBSE, ICSE board tutors available.',
+    keywords: 'find home tutor in Jodhpur, student registration Jodhpur, find tutor Jodhpur, find best home tutor in Jodhpur, find private tutor in Jodhpur, find personal tutor in Jodhpur, find tuition teacher in Jodhpur, home tutor near me in Jodhpur, tutor for class 1 to 12 in Jodhpur, CBSE tutor in Jodhpur, RBSE tutor in Jodhpur, ICSE tutor in Jodhpur, maths tutor in Jodhpur, science tutor in Jodhpur, english tutor in Jodhpur, physics tutor in Jodhpur, chemistry tutor in Jodhpur, biology tutor in Jodhpur, commerce tutor in Jodhpur, affordable home tuition in Jodhpur, experienced tutor in Jodhpur, female tutor in Jodhpur, male tutor in Jodhpur, one-to-one tutor in Jodhpur',
   },
   teacherRegister: {
     title: 'Teacher Registration Jodhpur - Join as Home Tutor | OneHourStudy',
@@ -29,19 +29,19 @@ export const pageSEO = {
     keywords: 'teacher registration Jodhpur, tutor registration Jodhpur Rajasthan, become a tutor Jodhpur, teach in Jodhpur, home tuition teacher Jodhpur, tutor jobs Jodhpur',
   },
   pricing: {
-    title: 'Tutoring Plans Jodhpur - Affordable Home Tuition Rates | OneHourStudy',
-    description: 'Flexible and affordable pricing plans for home tutoring in Jodhpur, Rajasthan. Tutoring services for all subjects class 1 to 12 and extracurricular activities. Competitive rates available.',
-    keywords: 'tutoring prices Jodhpur, tutor rates Jodhpur, tuition fees Jodhpur Rajasthan, affordable tutoring Jodhpur, pricing plans Jodhpur, tutor cost Jodhpur, home tuition charges Jodhpur',
+    title: 'Affordable Home Tuition Rates in Jodhpur | Best Tutor Pricing | OneHourStudy',
+    description: 'Affordable home tuition in Jodhpur for all subjects class 1-12. Best pricing plans for private tutors, personal tutors, and tuition teachers. Competitive rates for CBSE, RBSE, ICSE board students. Flexible payment options available.',
+    keywords: 'affordable home tuition in Jodhpur, home tutor rates in Jodhpur, private tutor prices in Jodhpur, tuition fees in Jodhpur, best tutor pricing in Jodhpur, home tuition charges in Jodhpur, tutor cost in Jodhpur, affordable tutoring in Jodhpur, cheap home tutor in Jodhpur, best tuition classes prices in Jodhpur, competitive tutor rates in Jodhpur, flexible payment tutor in Jodhpur',
   },
   faq: {
-    title: 'FAQ - Home Tutors in Jodhpur | OneHourStudy',
-    description: 'Frequently asked questions about home tutoring services in Jodhpur, Rajasthan. Learn about our platform, tutors for class 1-12, extracurricular activities, and home tuition in all areas of Jodhpur city.',
-    keywords: 'FAQ Jodhpur, home tutor questions Jodhpur, tutoring FAQ Jodhpur Rajasthan, how to find tutor Jodhpur, tutor services Jodhpur FAQ',
+    title: 'FAQ - Best Home Tutor in Jodhpur | Private Tutor Questions | OneHourStudy',
+    description: 'Frequently asked questions about finding the best home tutor in Jodhpur. Learn about private tutors, personal tutors, tuition teachers for class 1-12, CBSE, RBSE, ICSE boards, and affordable home tuition in all areas of Jodhpur city.',
+    keywords: 'FAQ home tutor Jodhpur, best tutor questions Jodhpur, private tutor FAQ Jodhpur, how to find tutor in Jodhpur, tutor services FAQ Jodhpur, home tuition questions Jodhpur, CBSE tutor FAQ Jodhpur, RBSE tutor FAQ Jodhpur, ICSE tutor FAQ Jodhpur, affordable tutor FAQ Jodhpur',
   },
   contact: {
-    title: 'Contact Us Jodhpur - Home Tutor Support | OneHourStudy',
-    description: 'Contact OneHourStudy support team in Jodhpur, Rajasthan for home tutoring services. We provide tutors for all subjects class 1-12 and extracurricular activities across all areas of Jodhpur city.',
-    keywords: 'contact home tutors Jodhpur, tutor support Jodhpur Rajasthan, get in touch Jodhpur, home tuition contact Jodhpur, tutor help Jodhpur',
+    title: 'Contact Best Home Tutor in Jodhpur | Private Tutor Support | OneHourStudy',
+    description: 'Contact OneHourStudy to find the best home tutor in Jodhpur. Get help finding private tutors, personal tutors, and tuition teachers for class 1-12, CBSE, RBSE, ICSE boards. Home tuition support available in all areas of Jodhpur city.',
+    keywords: 'contact home tutor Jodhpur, contact best tutor Jodhpur, private tutor support Jodhpur, tutor help Jodhpur, home tuition contact Jodhpur, find tutor support Jodhpur, CBSE tutor contact Jodhpur, RBSE tutor contact Jodhpur, ICSE tutor contact Jodhpur, affordable tutor contact Jodhpur',
   },
   studentLogin: {
     title: 'Student Login Jodhpur - OneHourStudy | Sign In',

@@ -67,6 +67,12 @@ export default function Home() {
                 contactType: 'Customer Support',
                 availableLanguage: 'English, Hindi',
               },
+              offers: {
+                '@type': 'Offer',
+                name: 'Home Tutoring Services in Jodhpur',
+                description: 'Best home tutor in Jodhpur, private tutor, personal tutor, tuition teacher for class 1-12, CBSE, RBSE, ICSE boards',
+                category: 'Educational Services',
+              },
               sameAs: [
                 // Add your social media links here
                 // 'https://www.facebook.com/onehourstudy',
@@ -83,8 +89,9 @@ export default function Home() {
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'WebSite',
-              name: 'OneHourStudy',
+              name: 'OneHourStudy - Best Home Tutor in Jodhpur',
               url: metadata.alternates.canonical,
+              description: 'Find the best home tutor in Jodhpur, private tutor, personal tutor, tuition teacher for class 1-12, CBSE, RBSE, ICSE boards',
               potentialAction: {
                 '@type': 'SearchAction',
                 target: {
@@ -92,6 +99,38 @@ export default function Home() {
                   urlTemplate: `${metadata.alternates.canonical}/search?q={search_term_string}`,
                 },
                 'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
+        
+        {/* Structured Data - Service */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Service',
+              serviceType: 'Home Tutoring Services',
+              provider: {
+                '@type': 'EducationalOrganization',
+                name: 'OneHourStudy',
+                address: {
+                  '@type': 'PostalAddress',
+                  addressLocality: 'Jodhpur',
+                  addressRegion: 'Rajasthan',
+                  addressCountry: 'IN',
+                },
+              },
+              areaServed: {
+                '@type': 'City',
+                name: 'Jodhpur',
+              },
+              description: 'Best home tutor in Jodhpur, private tutor, personal tutor, tuition teacher for class 1-12, CBSE, RBSE, ICSE boards. Affordable home tuition in Jodhpur city.',
+              offers: {
+                '@type': 'Offer',
+                name: 'Home Tutoring Services',
+                description: 'Find experienced home tutors, private tutors, personal tutors, and tuition teachers in Jodhpur for all subjects class 1-12',
               },
             }),
           }}
@@ -109,14 +148,14 @@ export default function Home() {
             <div className="grid md:grid-cols-2 gap-8 xl:gap-12 items-center">
             <div className="text-center md:text-left">
               <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gradient-primary mb-6 leading-tight">
-                Connecting Students with Expert Tutors
+                Best Home Tutor in Jodhpur | Private Tutor Near Me
               </h1>
               <h2 className="text-xl md:text-2xl text-primary font-bold mb-6 relative inline-block">
-                Learn in Just One Hour a Day!
+                Find Experienced Tutors for Class 1-12 | One-to-One Teaching
                 <span className="absolute bottom-0 left-0 w-16 h-1 bg-gradient-secondary rounded"></span>
               </h2>
               <p className="text-lg text-slate-700 mb-8 leading-relaxed">
-                Find qualified home tutors in <strong className="text-primary">Jodhpur, Rajasthan</strong> for all subjects from class 1 to class 12 and extracurricular activities. Quality home tuition services available across <strong className="text-primary">all areas of Jodhpur city</strong>.
+                Find qualified <strong className="text-primary">home tutors in Jodhpur</strong> for all subjects from class 1 to class 12. Connect with <strong className="text-primary">experienced private tutors</strong> and <strong className="text-primary">tuition teachers</strong> for CBSE, RBSE, and ICSE boards. <strong className="text-primary">Affordable home tuition</strong> services available across all areas of Jodhpur city. Get personalized <strong className="text-primary">one-to-one teaching</strong> in the comfort of your home.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
@@ -160,7 +199,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl xl:text-2xl font-bold text-slate-800 mb-4 text-center">For Students</h3>
               <p className="text-sm xl:text-base text-slate-700 text-center leading-relaxed">
-                Get access to qualified home tutors in Jodhpur for all subjects (class 1-12) and extracurricular activities. Learn at your own pace with personalized attention in your home.
+                Get access to qualified <strong>home tutors in Jodhpur</strong> for all subjects (class 1-12) and extracurricular activities. Learn at your own pace with personalized attention in your home. Available for CBSE, RBSE, and ICSE boards.
               </p>
             </div>
             <div className="bg-white p-6 xl:p-8 rounded-3xl shadow-lg border border-slate-100 hover:-translate-y-2 hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
@@ -200,10 +239,10 @@ export default function Home() {
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 xl:gap-8 max-w-content mx-auto">
             {[
-              { icon: 'fa-check-circle', title: 'Qualified Tutors', desc: 'All teachers are verified and qualified' },
-              { icon: 'fa-map-marker-alt', title: 'Home Tutoring', desc: 'Learn from the comfort of your home' },
-              { icon: 'fa-book', title: 'All Subjects', desc: 'Complete coverage from class 1 to 12' },
-              { icon: 'fa-dollar-sign', title: 'Affordable Plans', desc: 'Flexible pricing options for everyone' },
+              { icon: 'fa-check-circle', title: 'Qualified Tutors', desc: 'All home tutors in Jodhpur are verified and qualified. Experienced private tutors and tuition teachers available for CBSE, RBSE, ICSE boards.' },
+              { icon: 'fa-map-marker-alt', title: 'Home Tutoring', desc: 'Learn from the comfort of your home. Door-to-door tutor service available across all areas of Jodhpur city. One-to-one teaching at your doorstep.' },
+              { icon: 'fa-book', title: 'All Subjects', desc: 'Complete coverage from class 1 to 12. Find maths tutor, science tutor, english tutor, physics tutor, chemistry tutor, biology tutor, and commerce tutor in Jodhpur.' },
+              { icon: 'fa-dollar-sign', title: 'Affordable Plans', desc: 'Affordable home tuition in Jodhpur with flexible pricing options. Best tutor pricing for all subjects. Competitive rates for class 1-12 students.' },
             ].map((feature, idx) => (
               <div key={idx} className="bg-white p-6 xl:p-8 rounded-2xl shadow-md hover:-translate-y-2 hover:shadow-xl transition-all duration-300 text-center group border border-slate-100 hover:border-primary/20">
                 <span className={`fas ${feature.icon} text-4xl xl:text-5xl text-gradient-primary mb-4 inline-block group-hover:scale-110 transition-transform`} aria-hidden="true"></span>
