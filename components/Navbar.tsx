@@ -27,7 +27,9 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'Home' },
+    { href: '/pricing', label: 'Pricing' },
     { href: '/contact', label: 'Contact' },
+    { href: '/faq', label: 'FAQ' },
   ];
 
   const authenticatedNavLinks = [
@@ -46,7 +48,7 @@ export default function Navbar() {
 
           {/* Desktop Menu */}
           <ul className="hidden md:flex items-center gap-6">
-            {!authenticated && navLinks.map((link) => (
+            {navLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
@@ -147,7 +149,7 @@ export default function Navbar() {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <ul className="md:hidden flex flex-col gap-4 py-4 border-t border-slate-200">
-            {!authenticated && navLinks.map((link) => (
+            {navLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}

@@ -35,6 +35,7 @@ export default function SuccessModal({ isOpen, onClose, title = 'Registration Su
 
   return (
     <div
+      data-testid="success-modal"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={onClose}
       style={{ animation: 'fadeIn 0.3s ease-in-out' }}

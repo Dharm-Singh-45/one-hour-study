@@ -1,13 +1,19 @@
 'use client';
 
 import Head from 'next/head';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { isValidEmail, loginUser } from '@/lib/utils';
 import { generateMetadata } from '@/lib/seo';
+
+const Footer = dynamic(() => import('@/components/Footer'), {
+  ssr: true,
+  loading: () => <LoadingSpinner />,
+});
 
 export default function StudentLogin() {
   const router = useRouter();
@@ -169,7 +175,9 @@ export default function StudentLogin() {
         </div>
       </section>
 
-      <Footer />
+      <Suspense fallback={<LoadingSpinner />}>
+        <Footer />
+      </Suspense>
     </>
   );
 }

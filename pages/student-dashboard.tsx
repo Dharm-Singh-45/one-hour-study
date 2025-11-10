@@ -1,12 +1,18 @@
 'use client';
 
 import Head from 'next/head';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { getCurrentUser, isAuthenticated, getAllTeachers, getAllocations, createAllocation } from '@/lib/utils';
+
+const Footer = dynamic(() => import('@/components/Footer'), {
+  ssr: true,
+  loading: () => <LoadingSpinner />,
+});
 
 export default function StudentDashboard() {
   const router = useRouter();
@@ -377,7 +383,9 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      <Footer />
+      <Suspense fallback={<LoadingSpinner />}>
+        <Footer />
+      </Suspense>
     </>
   );
 }

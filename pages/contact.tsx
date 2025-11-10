@@ -1,12 +1,22 @@
 'use client';
 
 import Head from 'next/head';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import SuccessModal from '@/components/SuccessModal';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { isValidEmail, isValidPhone, saveToLocalStorage } from '@/lib/utils';
 import { generateMetadata } from '@/lib/seo';
+
+const SuccessModal = dynamic(() => import('@/components/SuccessModal'), {
+  ssr: false,
+  loading: () => null,
+});
+
+const Footer = dynamic(() => import('@/components/Footer'), {
+  ssr: true,
+  loading: () => <LoadingSpinner />,
+});
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -333,14 +343,18 @@ export default function Contact() {
         </div>
       </section>
 
-      <Footer />
+      <Suspense fallback={<LoadingSpinner />}>
+        <Footer />
+      </Suspense>
       
-      <SuccessModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title="Message Sent Successfully!"
-        message="Thank you for contacting us. We'll get back to you as soon as possible."
-      />
+      <Suspense fallback={null}>
+        <SuccessModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          title="Message Sent Successfully!"
+          message="Thank you for contacting us. We'll get back to you as soon as possible."
+        />
+      </Suspense>
     </>
   );
 }

@@ -1,11 +1,18 @@
 'use client';
 
 import Head from 'next/head';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { getCurrentUser, isAuthenticated, getAllStudents, getAllocations, createAllocation } from '@/lib/utils';
+import { sendPaymentReminder, sendPaymentReminderWithTemplate } from '@/lib/whatsapp';
+
+const Footer = dynamic(() => import('@/components/Footer'), {
+  ssr: true,
+  loading: () => <LoadingSpinner />,
+});
 
 export default function TeacherDashboard() {
   const router = useRouter();
@@ -15,6 +22,8 @@ export default function TeacherDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
+  const [sendingMessage, setSendingMessage] = useState<string | null>(null); // Track which allocation is sending
+  const [messageStatus, setMessageStatus] = useState<Record<string, { type: 'success' | 'error'; message: string }>>({});
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -48,6 +57,93 @@ export default function TeacherDashboard() {
 
   const allSubjects = Array.from(new Set(students.flatMap(s => s.subjects || [])));
   const allClasses = Array.from(new Set(students.map(s => s.class).filter(Boolean))).sort((a, b) => Number(a) - Number(b));
+
+  const handleSendPaymentReminder = async (allocation: any) => {
+    const student = students.find(s => s.id === allocation.studentId);
+    
+    if (!student) {
+      alert('Student information not found');
+      return;
+    }
+
+    if (!student.phone) {
+      alert('Student phone number is not available');
+      return;
+    }
+
+    setSendingMessage(allocation.id);
+    setMessageStatus(prev => ({
+      ...prev,
+      [allocation.id]: { type: 'success', message: '' },
+    }));
+
+    try {
+      // Check if content template SID is available (from environment variable)
+      // You can set TWILIO_WHATSAPP_CONTENT_SID in .env.local to use templates
+      const contentSid = process.env.NEXT_PUBLIC_TWILIO_WHATSAPP_CONTENT_SID;
+      
+      let result;
+      
+      if (contentSid) {
+        // Use content template (production method)
+        // Adjust contentVariables based on your template structure
+        // Example: {"1": "studentName", "2": "amount", "3": "subject"}
+        result = await sendPaymentReminderWithTemplate(
+          {
+            studentName: allocation.studentName,
+            studentPhone: student.phone,
+            teacherName: user.name,
+            amount: allocation.fees,
+            subject: allocation.subjects.join(', '),
+            allocationId: allocation.id,
+          },
+          contentSid,
+          {
+            "1": allocation.studentName,
+            "2": `₹${allocation.fees}`,
+            "3": allocation.subjects.join(', '),
+          }
+        );
+      } else {
+        // Use plain text message (sandbox/testing method)
+        result = await sendPaymentReminder({
+          studentName: allocation.studentName,
+          studentPhone: student.phone,
+          teacherName: user.name,
+          amount: allocation.fees,
+          subject: allocation.subjects.join(', '),
+          allocationId: allocation.id,
+        });
+      }
+
+      if (result.success) {
+        setMessageStatus(prev => ({
+          ...prev,
+          [allocation.id]: { type: 'success', message: 'Payment reminder sent successfully!' },
+        }));
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setMessageStatus(prev => {
+            const newStatus = { ...prev };
+            delete newStatus[allocation.id];
+            return newStatus;
+          });
+        }, 3000);
+      } else {
+        setMessageStatus(prev => ({
+          ...prev,
+          [allocation.id]: { type: 'error', message: result.message || 'Failed to send reminder' },
+        }));
+      }
+    } catch (error: any) {
+      setMessageStatus(prev => ({
+        ...prev,
+        [allocation.id]: { type: 'error', message: error.message || 'Failed to send payment reminder' },
+      }));
+    } finally {
+      setSendingMessage(null);
+    }
+  };
 
   if (!user) {
     return (
@@ -120,6 +216,44 @@ export default function TeacherDashboard() {
                             <span className="fas fa-rupee-sign text-primary w-5" aria-hidden="true"></span>
                             <span className="text-sm"><strong>Fees:</strong> ₹{allocation.fees}/hour</span>
                           </div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-primary/20">
+                          {messageStatus[allocation.id] && (
+                            <div className={`mb-3 p-2 rounded-lg text-sm ${
+                              messageStatus[allocation.id].type === 'success'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-red-100 text-red-700'
+                            }`}>
+                              {messageStatus[allocation.id].message}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => handleSendPaymentReminder(allocation)}
+                            disabled={sendingMessage === allocation.id || !student?.phone}
+                            className={`w-full py-2 px-4 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
+                              sendingMessage === allocation.id
+                                ? 'bg-slate-400 text-white cursor-not-allowed'
+                                : 'bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg'
+                            }`}
+                            aria-label={`Send payment reminder to ${allocation.studentName}`}
+                          >
+                            {sendingMessage === allocation.id ? (
+                              <>
+                                <span className="fas fa-spinner fa-spin" aria-hidden="true"></span>
+                                <span>Sending...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="fab fa-whatsapp" aria-hidden="true"></span>
+                                <span>Send Payment Reminder</span>
+                              </>
+                            )}
+                          </button>
+                          {!student?.phone && (
+                            <p className="text-xs text-red-600 mt-2 text-center">
+                              Phone number not available
+                            </p>
+                          )}
                         </div>
                       </div>
                     );
@@ -229,7 +363,9 @@ export default function TeacherDashboard() {
         </div>
       </section>
 
-      <Footer />
+      <Suspense fallback={<LoadingSpinner />}>
+        <Footer />
+      </Suspense>
     </>
   );
 }

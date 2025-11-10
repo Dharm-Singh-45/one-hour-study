@@ -1,8 +1,15 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { generateMetadata } from '@/lib/seo';
+
+const Footer = dynamic(() => import('@/components/Footer'), {
+  ssr: true,
+  loading: () => <LoadingSpinner />,
+});
 
 export default function Home() {
   const metadata = generateMetadata('home');
@@ -269,7 +276,9 @@ export default function Home() {
         </div>
       </section>
 
-      <Footer />
+      <Suspense fallback={<LoadingSpinner />}>
+        <Footer />
+      </Suspense>
     </>
   );
 }

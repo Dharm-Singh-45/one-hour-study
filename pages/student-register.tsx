@@ -1,13 +1,23 @@
 'use client';
 
 import Head from 'next/head';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import SuccessModal from '@/components/SuccessModal';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { isValidEmail, isValidPhone, saveToLocalStorage, registerUser } from '@/lib/utils';
 import { generateMetadata } from '@/lib/seo';
+
+const SuccessModal = dynamic(() => import('@/components/SuccessModal'), {
+  ssr: false,
+  loading: () => null,
+});
+
+const Footer = dynamic(() => import('@/components/Footer'), {
+  ssr: true,
+  loading: () => <LoadingSpinner />,
+});
 
 export default function StudentRegister() {
   const router = useRouter();
@@ -388,9 +398,13 @@ export default function StudentRegister() {
         </div>
       </section>
 
-      <Footer />
+      <Suspense fallback={<LoadingSpinner />}>
+        <Footer />
+      </Suspense>
       
-      <SuccessModal isOpen={showModal} onClose={handleCloseModal} />
+      <Suspense fallback={null}>
+        <SuccessModal isOpen={showModal} onClose={handleCloseModal} />
+      </Suspense>
     </>
   );
 }
