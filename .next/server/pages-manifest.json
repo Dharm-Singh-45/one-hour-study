@@ -3,5 +3,9 @@
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/": "pages/index.js",
-  "/teacher-register": "pages/teacher-register.js"
+  "/pricing": "pages/pricing.js",
+  "/contact": "pages/contact.js",
+  "/faq": "pages/faq.js",
+  "/student-register": "pages/student-register.js",
+  "/login": "pages/login.js"
 }

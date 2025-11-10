@@ -1,1 +1,50 @@
-{}
+{
+  "pages/contact.tsx -> @/components/Footer": {
+    "id": "pages/contact.tsx -> @/components/Footer",
+    "files": [
+      "static/chunks/components_Footer_tsx.js"
+    ]
+  },
+  "pages/contact.tsx -> @/components/SuccessModal": {
+    "id": "pages/contact.tsx -> @/components/SuccessModal",
+    "files": [
+      "static/chunks/components_SuccessModal_tsx.js"
+    ]
+  },
+  "pages/faq.tsx -> @/components/Footer": {
+    "id": "pages/faq.tsx -> @/components/Footer",
+    "files": [
+      "static/chunks/components_Footer_tsx.js"
+    ]
+  },
+  "pages/index.tsx -> @/components/Footer": {
+    "id": "pages/index.tsx -> @/components/Footer",
+    "files": [
+      "static/chunks/components_Footer_tsx.js"
+    ]
+  },
+  "pages/login.tsx -> @/components/Footer": {
+    "id": "pages/login.tsx -> @/components/Footer",
+    "files": [
+      "static/chunks/components_Footer_tsx.js"
+    ]
+  },
+  "pages/pricing.tsx -> @/components/Footer": {
+    "id": "pages/pricing.tsx -> @/components/Footer",
+    "files": [
+      "static/chunks/components_Footer_tsx.js"
+    ]
+  },
+  "pages/student-register.tsx -> @/components/Footer": {
+    "id": "pages/student-register.tsx -> @/components/Footer",
+    "files": [
+      "static/chunks/components_Footer_tsx.js"
+    ]
+  },
+  "pages/student-register.tsx -> @/components/SuccessModal": {
+    "id": "pages/student-register.tsx -> @/components/SuccessModal",
+    "files": [
+      "static/chunks/components_SuccessModal_tsx.js"
+    ]
+  }
+}
