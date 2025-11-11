@@ -47,4 +47,3 @@ async function connectDB(): Promise<typeof mongoose> {
 }
 
 export default connectDB;
-
