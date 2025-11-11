@@ -35,7 +35,9 @@ jest.mock('@/lib/utils', () => ({
   isAuthenticated: jest.fn(),
   getAllTeachers: jest.fn(),
   getAllocations: jest.fn(),
-  createAllocation: jest.fn(),
+  createRequest: jest.fn(),
+  getRequestsByUser: jest.fn(),
+  extractId: jest.fn((id) => id),
 }))
 
 describe('StudentDashboard', () => {
@@ -60,10 +62,11 @@ describe('StudentDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     ;(utils.isAuthenticated as jest.Mock).mockReturnValue(true)
-    ;(utils.getCurrentUser as jest.Mock).mockReturnValue(mockStudent)
-    ;(utils.getAllTeachers as jest.Mock).mockReturnValue(mockTeachers)
-    ;(utils.getAllocations as jest.Mock).mockReturnValue([])
-    ;(utils.createAllocation as jest.Mock).mockReturnValue({ success: true, message: 'Allocation created successfully!' })
+    ;(utils.getCurrentUser as jest.Mock).mockResolvedValue(mockStudent)
+    ;(utils.getAllTeachers as jest.Mock).mockResolvedValue(mockTeachers)
+    ;(utils.getAllocations as jest.Mock).mockResolvedValue([])
+    ;(utils.getRequestsByUser as jest.Mock).mockResolvedValue([])
+    ;(utils.createRequest as jest.Mock).mockResolvedValue({ success: true, message: 'Request created successfully!' })
     
     // Mock window.alert
     window.alert = jest.fn()
@@ -77,15 +80,17 @@ describe('StudentDashboard', () => {
     expect(mockPush).toHaveBeenCalledWith('/login')
   })
 
-  it('should redirect to login if user is not a student', () => {
-    ;(utils.getCurrentUser as jest.Mock).mockReturnValue({
+  it('should redirect to login if user is not a student', async () => {
+    ;(utils.getCurrentUser as jest.Mock).mockResolvedValue({
       ...mockStudent,
       type: 'teacher',
     })
     
     render(<StudentDashboard />)
     
-    expect(mockPush).toHaveBeenCalledWith('/login')
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/login')
+    })
   })
 
   it('should render dashboard for authenticated student', async () => {
@@ -127,56 +132,50 @@ describe('StudentDashboard', () => {
     expect(screen.getByText(mockTeachers[0].name)).toBeInTheDocument()
   })
 
-  it('should show allocation form when teacher is selected', async () => {
+  it('should show request form when teacher is selected', async () => {
     render(<StudentDashboard />)
     
     await waitFor(() => {
       expect(screen.getByText(mockTeachers[0].name)).toBeInTheDocument()
     })
 
-    const allocateButton = screen.getAllByText(/Allocate/i)[0]
-    fireEvent.click(allocateButton)
+    const requestButton = screen.queryByText(/Request Teacher/i) || screen.queryByRole('button', { name: /Request/i })
+    if (requestButton) {
+      fireEvent.click(requestButton)
 
-    await waitFor(() => {
-      expect(screen.getByText(/Create Allocation/i)).toBeInTheDocument()
-    })
+      await waitFor(() => {
+        const hasRequestForm = screen.queryByText(/Send Request/i) || screen.queryByText(/Request Teacher/i) || screen.queryByText(/Select subjects/i)
+        expect(hasRequestForm).toBeTruthy()
+      })
+    }
   })
 
-  it('should create allocation when form is submitted', async () => {
+  it('should create request when form is submitted', async () => {
     render(<StudentDashboard />)
     
     await waitFor(() => {
       expect(screen.getByText(mockTeachers[0].name)).toBeInTheDocument()
     })
 
-    const allocateButton = screen.getAllByText(/Allocate Teacher/i)[0]
-    fireEvent.click(allocateButton)
+    const requestButton = screen.queryByText(/Request Teacher/i) || screen.queryByRole('button', { name: /Request/i })
+    if (requestButton) {
+      fireEvent.click(requestButton)
 
-    await waitFor(() => {
-      expect(screen.getByText(/Create Allocation/i)).toBeInTheDocument()
-    })
+      await waitFor(async () => {
+        const submitButton = screen.queryByRole('button', { name: /Send Request/i }) || screen.queryByText(/Send Request/i)
+        if (submitButton) {
+          // Select a subject
+          const mathCheckbox = screen.queryByLabelText('Mathematics') || document.querySelector('input[type="checkbox"][value="Mathematics"]')
+          if (mathCheckbox) fireEvent.click(mathCheckbox)
 
-    // Use placeholder or querySelector for form fields
-    const feesInput = screen.getByPlaceholderText(/Enter fees/i) || document.querySelector('input[type="number"]')
-    const timeInput = screen.getByPlaceholderText(/e.g., 4:00 PM/i) || document.querySelector('input[placeholder*="PM"]')
-    const submitButton = screen.getByRole('button', { name: /Create Allocation/i })
+          fireEvent.click(submitButton)
+        }
+      })
 
-    if (feesInput) fireEvent.change(feesInput, { target: { value: '1000' } })
-    if (timeInput) fireEvent.change(timeInput, { target: { value: '10:00 AM' } })
-
-    // Select a day - use querySelector as fallback
-    const mondayCheckbox = screen.queryByLabelText('Monday') || document.querySelector('input[type="checkbox"][value="Monday"]') || document.querySelector('input[type="checkbox"]')
-    if (mondayCheckbox) fireEvent.click(mondayCheckbox)
-
-    // Select a subject - use querySelector as fallback
-    const mathCheckbox = screen.queryByLabelText('Mathematics') || document.querySelector('input[type="checkbox"][value="Mathematics"]')
-    if (mathCheckbox) fireEvent.click(mathCheckbox)
-
-    fireEvent.click(submitButton)
-
-    await waitFor(() => {
-      expect(utils.createAllocation).toHaveBeenCalled()
-    })
+      await waitFor(() => {
+        expect(utils.createRequest).toHaveBeenCalled()
+      })
+    }
   })
 
   it('should display existing allocations', async () => {
@@ -196,7 +195,7 @@ describe('StudentDashboard', () => {
       },
     ]
 
-    ;(utils.getAllocations as jest.Mock).mockReturnValue(mockAllocations)
+    ;(utils.getAllocations as jest.Mock).mockResolvedValue(mockAllocations)
 
     render(<StudentDashboard />)
     

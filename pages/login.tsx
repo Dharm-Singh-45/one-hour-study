@@ -7,7 +7,8 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { isValidEmail, loginUser } from '@/lib/utils';
+import toast from 'react-hot-toast';
+import { isValidEmail, loginUser, focusFirstErrorField } from '@/lib/utils';
 import { generateMetadata } from '@/lib/seo';
 
 const Footer = dynamic(() => import('@/components/Footer'), {
@@ -48,21 +49,40 @@ export default function Login() {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    if (Object.keys(newErrors).length > 0) {
+      const fieldOrder = ['email', 'password'];
+      const firstError = Object.keys(newErrors)[0];
+      const errorMessage = newErrors[firstError];
+      
+      // Show toast with specific error message
+      toast.error(errorMessage);
+      
+      // Focus on first error field
+      focusFirstErrorField(Object.keys(newErrors), fieldOrder);
+      
+      return false;
+    }
+    
+    return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      setIsLoading(true);
-      const result = loginUser(formData.email, formData.password, userType);
-      
-      if (result.success) {
-        router.push(userType === 'student' ? '/student-dashboard' : '/teacher-dashboard');
-      } else {
-        setErrors({ general: result.message });
-        setIsLoading(false);
-      }
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsLoading(true);
+    const result = await loginUser(formData.email, formData.password, userType);
+    
+    if (result.success) {
+      toast.success('Login successful!');
+      router.push(userType === 'student' ? '/student-dashboard' : '/teacher-dashboard');
+    } else {
+      toast.error(result.message || 'Login failed. Please try again.');
+      setErrors({ general: result.message });
+      setIsLoading(false);
     }
   };
 
@@ -191,19 +211,10 @@ export default function Login() {
                 <p className="text-slate-700">
                   Don't have an account?{' '}
                   <Link 
-                    href={userType === 'student' ? '/student-register' : '/teacher-register'} 
+                    href="/register" 
                     className="text-primary hover:underline font-semibold"
                   >
                     Sign up as {userType === 'student' ? 'Student' : 'Teacher'}
-                  </Link>
-                </p>
-                <p className="text-slate-600 text-sm">
-                  <Link href="/student-register" className="text-primary hover:underline font-semibold mr-2">
-                    Student Sign Up
-                  </Link>
-                  {' | '}
-                  <Link href="/teacher-register" className="text-primary hover:underline font-semibold ml-2">
-                    Teacher Sign Up
                   </Link>
                 </p>
               </div>

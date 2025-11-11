@@ -7,7 +7,8 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { getCurrentUser, isAuthenticated, getAllTeachers, getAllocations, createAllocation } from '@/lib/utils';
+import toast from 'react-hot-toast';
+import { getCurrentUser, isAuthenticated, getAllTeachers, getAllocations, createRequest, getRequestsByUser, AllocationRequest, extractId } from '@/lib/utils';
 
 const Footer = dynamic(() => import('@/components/Footer'), {
   ssr: true,
@@ -19,83 +20,72 @@ export default function StudentDashboard() {
   const [user, setUser] = useState<any>(null);
   const [teachers, setTeachers] = useState<any[]>([]);
   const [allocations, setAllocations] = useState<any[]>([]);
+  const [requests, setRequests] = useState<AllocationRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
-  const [showAllocationForm, setShowAllocationForm] = useState(false);
+  const [showRequestForm, setShowRequestForm] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
-  const [allocationData, setAllocationData] = useState({
-    fees: '',
-    time: '',
-    days: [] as string[],
+  const [requestData, setRequestData] = useState({
     subjects: [] as string[],
+    message: '',
   });
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (!isAuthenticated()) {
-        router.push('/login');
-        return;
+    const loadData = async () => {
+      if (typeof window !== 'undefined') {
+        if (!isAuthenticated()) {
+          router.push('/login');
+          return;
+        }
+        
+        const currentUser = await getCurrentUser();
+        if (!currentUser || currentUser.type !== 'student') {
+          router.push('/login');
+          return;
+        }
+        
+        setUser(currentUser);
+        const teachersData = await getAllTeachers();
+        setTeachers(teachersData);
+        const allocationsData = await getAllocations(currentUser.id || currentUser._id, 'student');
+        setAllocations(allocationsData);
+        const requestsData = await getRequestsByUser(currentUser.id || currentUser._id, 'student');
+        setRequests(requestsData);
       }
-      
-      const currentUser = getCurrentUser();
-      if (!currentUser || currentUser.type !== 'student') {
-        router.push('/login');
-        return;
-      }
-      
-      setUser(currentUser);
-      setTeachers(getAllTeachers());
-      setAllocations(getAllocations(currentUser.id, 'student'));
-    }
+    };
+    
+    loadData();
   }, [router]);
 
-  const handleDayChange = (day: string) => {
-    setAllocationData(prev => ({
-      ...prev,
-      days: prev.days.includes(day)
-        ? prev.days.filter(d => d !== day)
-        : [...prev.days, day],
-    }));
-  };
 
-  const handleSubjectChange = (subject: string) => {
-    setAllocationData(prev => ({
-      ...prev,
-      subjects: prev.subjects.includes(subject)
-        ? prev.subjects.filter(s => s !== subject)
-        : [...prev.subjects, subject],
-    }));
-  };
-
-  const handleCreateAllocation = () => {
+  const handleCreateRequest = async () => {
     if (!selectedTeacher) return;
     
-    if (!allocationData.fees || !allocationData.time || allocationData.days.length === 0 || allocationData.subjects.length === 0) {
-      alert('Please fill all fields');
+    if (requestData.subjects.length === 0) {
+      toast.error('Please select at least one subject');
       return;
     }
 
-    const result = createAllocation({
-      studentId: user.id,
-      teacherId: selectedTeacher.id,
-      studentName: user.name,
-      teacherName: selectedTeacher.name,
-      subjects: allocationData.subjects,
-      fees: parseInt(allocationData.fees),
-      time: allocationData.time,
-      days: allocationData.days,
-      startDate: new Date().toISOString(),
-      status: 'active',
+    const result = await createRequest({
+      requesterId: user.id || user._id,
+      requesterType: 'student',
+      requesterName: user.name,
+      targetId: selectedTeacher.id || selectedTeacher._id,
+      targetType: 'teacher',
+      targetName: selectedTeacher.name,
+      subjects: requestData.subjects,
+      message: requestData.message,
     });
 
     if (result.success) {
-      alert('Teacher allocated successfully!');
-      setShowAllocationForm(false);
-      setAllocations(getAllocations(user.id, 'student'));
-      setAllocationData({ fees: '', time: '', days: [], subjects: [] });
+      toast.success('Request sent successfully! Admin will review and allocate the teacher.');
+      setShowRequestForm(false);
+      const requestsData = await getRequestsByUser(user.id || user._id, 'student');
+      setRequests(requestsData);
+      setRequestData({ subjects: [], message: '' });
       setSelectedTeacher(null);
     } else {
-      alert(result.message);
+      toast.error(result.message || 'Failed to send request. Please try again.');
     }
   };
 
@@ -146,6 +136,58 @@ export default function StudentDashboard() {
               <p className="text-slate-700">Manage your learning journey and find the perfect tutors</p>
             </div>
 
+            {/* My Requests Section */}
+            {requests.length > 0 && (
+              <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl border-2 border-primary/10 mb-8">
+                <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                  <span className="fas fa-paper-plane text-primary" aria-hidden="true"></span>
+                  My Requests
+                </h2>
+                <div className="space-y-4">
+                  {requests.map((request) => {
+                    const requestId = request.id || request._id;
+                    const targetId = extractId(request.targetId);
+                    const teacher = teachers.find(t => {
+                      const teacherId = t.id || t._id;
+                      return teacherId === targetId;
+                    });
+                    const statusColors = {
+                      pending: 'bg-yellow-100 text-yellow-700',
+                      approved: 'bg-blue-100 text-blue-700',
+                      rejected: 'bg-red-100 text-red-700',
+                      allocated: 'bg-green-100 text-green-700',
+                    };
+                    return (
+                      <div key={requestId} className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="font-semibold text-slate-800">{request.targetName}</h3>
+                            <p className="text-sm text-slate-600">{teacher?.email}</p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[request.status]}`}>
+                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                          </span>
+                        </div>
+                        <div className="mt-2">
+                          <p className="text-sm text-slate-700">
+                            <strong>Subjects:</strong> {request.subjects.join(', ')}
+                          </p>
+                          {request.message && (
+                            <p className="text-sm text-slate-600 mt-1">
+                              <strong>Message:</strong> {request.message}
+                            </p>
+                          )}
+                          <p className="text-xs text-slate-500 mt-2">
+                            Requested: {new Date(request.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Allocated Teachers Section */}
             {allocations.length > 0 && (
               <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl border-2 border-primary/10 mb-8">
@@ -155,9 +197,14 @@ export default function StudentDashboard() {
                 </h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {allocations.map((allocation) => {
-                    const teacher = teachers.find(t => t.id === allocation.teacherId);
+                    const allocationId = allocation.id || allocation._id;
+                    const teacherId = allocation.teacherId?._id || allocation.teacherId;
+                    const teacher = teachers.find(t => {
+                      const tId = t.id || t._id;
+                      return tId === teacherId;
+                    });
                     return (
-                      <div key={allocation.id} className="bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-xl p-6 border border-primary/20 hover:shadow-lg transition-all">
+                      <div key={allocationId} className="bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-xl p-6 border border-primary/20 hover:shadow-lg transition-all">
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <h3 className="text-xl font-bold text-slate-800 mb-1">{allocation.teacherName}</h3>
@@ -229,9 +276,13 @@ export default function StudentDashboard() {
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredTeachers.map((teacher) => {
-                    const isAllocated = allocations.some(a => a.teacherId === teacher.id);
+                    const teacherId = teacher.id || teacher._id;
+                    const isAllocated = allocations.some(a => {
+                      const allocTeacherId = a.teacherId?._id || a.teacherId;
+                      return allocTeacherId === teacherId;
+                    });
                     return (
-                      <div key={teacher.id} className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-primary transition-all hover:shadow-lg">
+                      <div key={teacherId} className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-primary transition-all hover:shadow-lg">
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <h3 className="text-xl font-bold text-slate-800 mb-1">{teacher.name}</h3>
@@ -270,17 +321,42 @@ export default function StudentDashboard() {
                             <strong>Qualification:</strong> {teacher.qualification}
                           </p>
                         )}
-                        {!isAllocated && (
-                          <button
-                            onClick={() => {
-                              setSelectedTeacher(teacher);
-                              setShowAllocationForm(true);
-                            }}
-                            className="w-full bg-gradient-primary text-white py-2 px-4 rounded-lg font-semibold hover:shadow-colored transition-all"
-                          >
-                            Allocate Teacher
-                          </button>
-                        )}
+                        {(() => {
+                          const hasPendingRequest = requests.some(r => {
+                            const reqTargetId = extractId(r.targetId);
+                            return reqTargetId === teacherId && r.status === 'pending';
+                          });
+                          const isAllocated = allocations.some(a => {
+                            const allocTeacherId = a.teacherId?._id || a.teacherId;
+                            return allocTeacherId === teacherId;
+                          });
+                          
+                          if (isAllocated) {
+                            return (
+                              <span className="w-full bg-green-100 text-green-700 py-2 px-4 rounded-lg font-semibold text-center block">
+                                ✓ Allocated
+                              </span>
+                            );
+                          } else if (hasPendingRequest) {
+                            return (
+                              <span className="w-full bg-yellow-100 text-yellow-700 py-2 px-4 rounded-lg font-semibold text-center block">
+                                Request Pending
+                              </span>
+                            );
+                          } else {
+                            return (
+                              <button
+                                onClick={() => {
+                                  setSelectedTeacher(teacher);
+                                  setShowRequestForm(true);
+                                }}
+                                className="w-full bg-gradient-primary text-white py-2 px-4 rounded-lg font-semibold hover:shadow-colored transition-all"
+                              >
+                                Request Teacher
+                              </button>
+                            );
+                          }
+                        })()}
                       </div>
                     );
                   })}
@@ -291,15 +367,15 @@ export default function StudentDashboard() {
         </div>
       </section>
 
-      {/* Allocation Form Modal */}
-      {showAllocationForm && selectedTeacher && (
+      {/* Request Form Modal */}
+      {showRequestForm && selectedTeacher && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-slate-800">Allocate Teacher: {selectedTeacher.name}</h3>
+              <h3 className="text-2xl font-bold text-slate-800">Request Teacher: {selectedTeacher.name}</h3>
               <button
                 onClick={() => {
-                  setShowAllocationForm(false);
+                  setShowRequestForm(false);
                   setSelectedTeacher(null);
                 }}
                 className="text-slate-400 hover:text-slate-600"
@@ -309,50 +385,21 @@ export default function StudentDashboard() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-slate-700 font-semibold mb-2">Fees per Hour (₹)</label>
-                <input
-                  type="number"
-                  value={allocationData.fees}
-                  onChange={(e) => setAllocationData(prev => ({ ...prev, fees: e.target.value }))}
-                  className="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-primary focus:outline-none"
-                  placeholder="Enter fees"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-semibold mb-2">Time</label>
-                <input
-                  type="text"
-                  value={allocationData.time}
-                  onChange={(e) => setAllocationData(prev => ({ ...prev, time: e.target.value }))}
-                  className="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-primary focus:outline-none"
-                  placeholder="e.g., 4:00 PM - 5:00 PM"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-semibold mb-2">Select Days</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
-                    <label key={day} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={allocationData.days.includes(day)}
-                        onChange={() => handleDayChange(day)}
-                        className="w-5 h-5 text-primary rounded"
-                      />
-                      <span className="text-slate-700 text-sm">{day}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div>
                 <label className="block text-slate-700 font-semibold mb-2">Select Subjects</label>
-                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border border-slate-200 rounded-lg p-4">
                   {selectedTeacher.subjects?.map((subject: string) => (
                     <label key={subject} className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={allocationData.subjects.includes(subject)}
-                        onChange={() => handleSubjectChange(subject)}
+                        checked={requestData.subjects.includes(subject)}
+                        onChange={() => {
+                          setRequestData(prev => ({
+                            ...prev,
+                            subjects: prev.subjects.includes(subject)
+                              ? prev.subjects.filter(s => s !== subject)
+                              : [...prev.subjects, subject],
+                          }));
+                        }}
                         className="w-5 h-5 text-primary rounded"
                       />
                       <span className="text-slate-700 text-sm">{subject}</span>
@@ -360,18 +407,34 @@ export default function StudentDashboard() {
                   ))}
                 </div>
               </div>
+              <div>
+                <label className="block text-slate-700 font-semibold mb-2">Message (Optional)</label>
+                <textarea
+                  value={requestData.message}
+                  onChange={(e) => setRequestData(prev => ({ ...prev, message: e.target.value }))}
+                  className="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-primary focus:outline-none"
+                  placeholder="Add any additional information..."
+                  rows={4}
+                />
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-700">
+                  <span className="fas fa-info-circle mr-2" aria-hidden="true"></span>
+                  Your request will be reviewed by admin. Once approved, the teacher will be allocated to you.
+                </p>
+              </div>
               <div className="flex gap-3 pt-4">
                 <button
-                  onClick={handleCreateAllocation}
+                  onClick={handleCreateRequest}
                   className="flex-1 bg-gradient-primary text-white py-3 px-6 rounded-lg font-semibold hover:shadow-colored transition-all"
                 >
-                  Create Allocation
+                  Send Request
                 </button>
                 <button
                   onClick={() => {
-                    setShowAllocationForm(false);
+                    setShowRequestForm(false);
                     setSelectedTeacher(null);
-                    setAllocationData({ fees: '', time: '', days: [], subjects: [] });
+                    setRequestData({ subjects: [], message: '' });
                   }}
                   className="flex-1 bg-slate-200 text-slate-700 py-3 px-6 rounded-lg font-semibold hover:bg-slate-300 transition-all"
                 >

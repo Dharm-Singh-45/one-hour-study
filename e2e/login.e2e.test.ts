@@ -147,34 +147,27 @@ describe('Login Page E2E Tests', () => {
   })
 
   it('should have links to registration pages', async () => {
-    const studentRegisterLink = await page.$('a[href="/student-register"]')
-    const teacherRegisterLink = await page.$('a[href="/teacher-register"]')
-
-    expect(studentRegisterLink).not.toBeNull()
-    expect(teacherRegisterLink).not.toBeNull()
-  })
-
-  it('should navigate to student registration page', async () => {
-    const studentRegisterLink = await page.$('a[href="/student-register"]')
-    if (studentRegisterLink) {
-      await Promise.all([
-        page.waitForNavigation({ waitUntil: 'networkidle0' }),
-        studentRegisterLink.click(),
-      ])
-      expect(page.url()).toBe('http://localhost:3000/student-register')
-    }
-  })
-
-  it('should navigate to teacher registration page', async () => {
-    await page.goto('http://localhost:3000/login', { waitUntil: 'networkidle0' })
+    // Login page now links to unified /register page
+    const registerLink = await page.$('a[href="/register"]')
+    expect(registerLink).not.toBeNull()
     
-    const teacherRegisterLink = await page.$('a[href="/teacher-register"]')
-    if (teacherRegisterLink) {
+    // Check that the link text contains "Sign up"
+    const linkText = await page.evaluate((el) => el?.textContent || '', registerLink)
+    expect(linkText).toMatch(/Sign up/i)
+  })
+
+  it('should navigate to registration page', async () => {
+    const registerLink = await page.$('a[href="/register"]')
+    if (registerLink) {
       await Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle0' }),
-        teacherRegisterLink.click(),
+        registerLink.click(),
       ])
-      expect(page.url()).toBe('http://localhost:3000/teacher-register')
+      expect(page.url()).toBe('http://localhost:3000/register')
+      
+      // Verify the registration page has user type selector
+      const pageText = await page.evaluate(() => document.body.textContent || '')
+      expect(pageText).toMatch(/Student|Teacher|Register/i)
     }
   })
 })

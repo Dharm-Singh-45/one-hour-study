@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { getCurrentUser, isAuthenticated, getAllStudents, getAllocations, createAllocation } from '@/lib/utils';
+import toast from 'react-hot-toast';
+import { getCurrentUser, isAuthenticated, getAllStudents, getAllocations, createRequest, getRequestsByUser, AllocationRequest, extractId } from '@/lib/utils';
 import { sendPaymentReminder, sendPaymentReminderWithTemplate } from '@/lib/whatsapp';
 
 const Footer = dynamic(() => import('@/components/Footer'), {
@@ -19,29 +20,44 @@ export default function TeacherDashboard() {
   const [user, setUser] = useState<any>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [allocations, setAllocations] = useState<any[]>([]);
+  const [requests, setRequests] = useState<AllocationRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [requestData, setRequestData] = useState({
+    subjects: [] as string[],
+    message: '',
+  });
   const [sendingMessage, setSendingMessage] = useState<string | null>(null); // Track which allocation is sending
   const [messageStatus, setMessageStatus] = useState<Record<string, { type: 'success' | 'error'; message: string }>>({});
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (!isAuthenticated()) {
-        router.push('/login');
-        return;
+    const loadData = async () => {
+      if (typeof window !== 'undefined') {
+        if (!isAuthenticated()) {
+          router.push('/login');
+          return;
+        }
+        
+        const currentUser = await getCurrentUser();
+        if (!currentUser || currentUser.type !== 'teacher') {
+          router.push('/login');
+          return;
+        }
+        
+        setUser(currentUser);
+        const studentsData = await getAllStudents();
+        setStudents(studentsData);
+        const allocationsData = await getAllocations(currentUser.id || currentUser._id, 'teacher');
+        setAllocations(allocationsData);
+        const requestsData = await getRequestsByUser(currentUser.id || currentUser._id, 'teacher');
+        setRequests(requestsData);
       }
-      
-      const currentUser = getCurrentUser();
-      if (!currentUser || currentUser.type !== 'teacher') {
-        router.push('/login');
-        return;
-      }
-      
-      setUser(currentUser);
-      setStudents(getAllStudents());
-      setAllocations(getAllocations(currentUser.id, 'teacher'));
-    }
+    };
+    
+    loadData();
   }, [router]);
 
   const filteredStudents = students.filter(student => {
@@ -59,22 +75,27 @@ export default function TeacherDashboard() {
   const allClasses = Array.from(new Set(students.map(s => s.class).filter(Boolean))).sort((a, b) => Number(a) - Number(b));
 
   const handleSendPaymentReminder = async (allocation: any) => {
-    const student = students.find(s => s.id === allocation.studentId);
+    const studentId = allocation.studentId?._id || allocation.studentId;
+    const student = students.find(s => {
+      const sId = s.id || s._id;
+      return sId === studentId;
+    });
     
     if (!student) {
-      alert('Student information not found');
+      toast.error('Student information not found');
       return;
     }
-
+    
     if (!student.phone) {
-      alert('Student phone number is not available');
+      toast.error('Student phone number is not available');
       return;
     }
 
-    setSendingMessage(allocation.id);
+    const allocationId = allocation.id || allocation._id;
+    setSendingMessage(allocationId);
     setMessageStatus(prev => ({
       ...prev,
-      [allocation.id]: { type: 'success', message: '' },
+      [allocationId]: { type: 'success', message: '' },
     }));
 
     try {
@@ -119,26 +140,26 @@ export default function TeacherDashboard() {
       if (result.success) {
         setMessageStatus(prev => ({
           ...prev,
-          [allocation.id]: { type: 'success', message: 'Payment reminder sent successfully!' },
+          [allocationId]: { type: 'success', message: 'Payment reminder sent successfully!' },
         }));
         // Clear success message after 3 seconds
         setTimeout(() => {
           setMessageStatus(prev => {
             const newStatus = { ...prev };
-            delete newStatus[allocation.id];
+            delete newStatus[allocationId];
             return newStatus;
           });
         }, 3000);
       } else {
         setMessageStatus(prev => ({
           ...prev,
-          [allocation.id]: { type: 'error', message: result.message || 'Failed to send reminder' },
+          [allocationId]: { type: 'error', message: result.message || 'Failed to send reminder' },
         }));
       }
     } catch (error: any) {
       setMessageStatus(prev => ({
         ...prev,
-        [allocation.id]: { type: 'error', message: error.message || 'Failed to send payment reminder' },
+        [allocationId]: { type: 'error', message: error.message || 'Failed to send payment reminder' },
       }));
     } finally {
       setSendingMessage(null);
@@ -174,6 +195,61 @@ export default function TeacherDashboard() {
               <p className="text-slate-700">Manage your students and grow your tutoring business</p>
             </div>
 
+            {/* My Requests Section */}
+            {requests.length > 0 && (
+              <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl border-2 border-primary/10 mb-8">
+                <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                  <span className="fas fa-paper-plane text-primary" aria-hidden="true"></span>
+                  My Requests
+                </h2>
+                <div className="space-y-4">
+                  {requests.map((request) => {
+                    const requestId = request.id || request._id;
+                    const targetId = extractId(request.targetId);
+                    const student = students.find(s => {
+                      const studentId = s.id || s._id;
+                      return studentId === targetId;
+                    });
+                    const statusColors = {
+                      pending: 'bg-yellow-100 text-yellow-700',
+                      approved: 'bg-blue-100 text-blue-700',
+                      rejected: 'bg-red-100 text-red-700',
+                      allocated: 'bg-green-100 text-green-700',
+                    };
+                    return (
+                      <div key={requestId} className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="font-semibold text-slate-800">{request.targetName}</h3>
+                            <p className="text-sm text-slate-600">{student?.email}</p>
+                            {student?.class && (
+                              <p className="text-sm text-slate-600">Class {student.class}</p>
+                            )}
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[request.status]}`}>
+                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                          </span>
+                        </div>
+                        <div className="mt-2">
+                          <p className="text-sm text-slate-700">
+                            <strong>Subjects:</strong> {request.subjects.join(', ')}
+                          </p>
+                          {request.message && (
+                            <p className="text-sm text-slate-600 mt-1">
+                              <strong>Message:</strong> {request.message}
+                            </p>
+                          )}
+                          <p className="text-xs text-slate-500 mt-2">
+                            Requested: {new Date(request.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Allocated Students Section */}
             {allocations.length > 0 && (
               <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl border-2 border-primary/10 mb-8">
@@ -183,9 +259,14 @@ export default function TeacherDashboard() {
                 </h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {allocations.map((allocation) => {
-                    const student = students.find(s => s.id === allocation.studentId);
+                    const allocationId = allocation.id || allocation._id;
+                    const studentId = allocation.studentId?._id || allocation.studentId;
+                    const student = students.find(s => {
+                      const sId = s.id || s._id;
+                      return sId === studentId;
+                    });
                     return (
-                      <div key={allocation.id} className="bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-xl p-6 border border-primary/20 hover:shadow-lg transition-all">
+                      <div key={allocationId} className="bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-xl p-6 border border-primary/20 hover:shadow-lg transition-all">
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <h3 className="text-xl font-bold text-slate-800 mb-1">{allocation.studentName}</h3>
@@ -218,26 +299,26 @@ export default function TeacherDashboard() {
                           </div>
                         </div>
                         <div className="mt-4 pt-4 border-t border-primary/20">
-                          {messageStatus[allocation.id] && (
+                          {messageStatus[allocationId] && (
                             <div className={`mb-3 p-2 rounded-lg text-sm ${
-                              messageStatus[allocation.id].type === 'success'
+                              messageStatus[allocationId].type === 'success'
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-red-100 text-red-700'
                             }`}>
-                              {messageStatus[allocation.id].message}
+                              {messageStatus[allocationId].message}
                             </div>
                           )}
                           <button
                             onClick={() => handleSendPaymentReminder(allocation)}
-                            disabled={sendingMessage === allocation.id || !student?.phone}
+                            disabled={sendingMessage === allocationId || !student?.phone}
                             className={`w-full py-2 px-4 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
-                              sendingMessage === allocation.id
+                              sendingMessage === allocationId
                                 ? 'bg-slate-400 text-white cursor-not-allowed'
                                 : 'bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg'
                             }`}
                             aria-label={`Send payment reminder to ${allocation.studentName}`}
                           >
-                            {sendingMessage === allocation.id ? (
+                            {sendingMessage === allocationId ? (
                               <>
                                 <span className="fas fa-spinner fa-spin" aria-hidden="true"></span>
                                 <span>Sending...</span>
@@ -308,9 +389,13 @@ export default function TeacherDashboard() {
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredStudents.map((student) => {
-                    const isAllocated = allocations.some(a => a.studentId === student.id);
+                    const studentId = student.id || student._id;
+                    const isAllocated = allocations.some(a => {
+                      const allocStudentId = a.studentId?._id || a.studentId;
+                      return allocStudentId === studentId;
+                    });
                     return (
-                      <div key={student.id} className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-primary transition-all hover:shadow-lg">
+                      <div key={studentId} className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-primary transition-all hover:shadow-lg">
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <h3 className="text-xl font-bold text-slate-800 mb-1">{student.name}</h3>
@@ -344,15 +429,42 @@ export default function TeacherDashboard() {
                             )}
                           </div>
                         </div>
-                        {isAllocated ? (
-                          <div className="text-center">
-                            <p className="text-sm text-green-600 font-semibold">✓ Already Allocated</p>
-                          </div>
-                        ) : (
-                          <div className="text-center">
-                            <p className="text-sm text-slate-500 mb-2">Waiting for student allocation</p>
-                          </div>
-                        )}
+                        {(() => {
+                          const hasPendingRequest = requests.some(r => {
+                            const reqTargetId = extractId(r.targetId);
+                            return reqTargetId === studentId && r.status === 'pending';
+                          });
+                          const isAllocated = allocations.some(a => {
+                            const allocStudentId = a.studentId?._id || a.studentId;
+                            return allocStudentId === studentId;
+                          });
+                          
+                          if (isAllocated) {
+                            return (
+                              <span className="w-full bg-green-100 text-green-700 py-2 px-4 rounded-lg font-semibold text-center block">
+                                ✓ Allocated
+                              </span>
+                            );
+                          } else if (hasPendingRequest) {
+                            return (
+                              <span className="w-full bg-yellow-100 text-yellow-700 py-2 px-4 rounded-lg font-semibold text-center block">
+                                Request Pending
+                              </span>
+                            );
+                          } else {
+                            return (
+                              <button
+                                onClick={() => {
+                                  setSelectedStudent(student);
+                                  setShowRequestForm(true);
+                                }}
+                                className="w-full bg-gradient-primary text-white py-2 px-4 rounded-lg font-semibold hover:shadow-colored transition-all"
+                              >
+                                Request Student
+                              </button>
+                            );
+                          }
+                        })()}
                       </div>
                     );
                   })}
@@ -362,6 +474,114 @@ export default function TeacherDashboard() {
           </div>
         </div>
       </section>
+
+      {/* Request Form Modal */}
+      {showRequestForm && selectedStudent && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-slate-800">Request Student: {selectedStudent.name}</h3>
+              <button
+                onClick={() => {
+                  setShowRequestForm(false);
+                  setSelectedStudent(null);
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <span className="fas fa-times text-xl" aria-hidden="true"></span>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-slate-700 font-semibold mb-2">Select Subjects</label>
+                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border border-slate-200 rounded-lg p-4">
+                  {selectedStudent.subjects?.filter((subject: string) => 
+                    user.subjects?.includes(subject)
+                  ).map((subject: string) => (
+                    <label key={subject} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={requestData.subjects.includes(subject)}
+                        onChange={() => {
+                          setRequestData(prev => ({
+                            ...prev,
+                            subjects: prev.subjects.includes(subject)
+                              ? prev.subjects.filter(s => s !== subject)
+                              : [...prev.subjects, subject],
+                          }));
+                        }}
+                        className="w-5 h-5 text-primary rounded"
+                      />
+                      <span className="text-slate-700 text-sm">{subject}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-slate-700 font-semibold mb-2">Message (Optional)</label>
+                <textarea
+                  value={requestData.message}
+                  onChange={(e) => setRequestData(prev => ({ ...prev, message: e.target.value }))}
+                  className="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-primary focus:outline-none"
+                  placeholder="Add any additional information..."
+                  rows={4}
+                />
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-700">
+                  <span className="fas fa-info-circle mr-2" aria-hidden="true"></span>
+                  Your request will be reviewed by admin. Once approved, the student will be allocated to you.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={async () => {
+                    if (requestData.subjects.length === 0) {
+                      toast.error('Please select at least one subject');
+                      return;
+                    }
+
+                    const result = await createRequest({
+                      requesterId: user.id || user._id,
+                      requesterType: 'teacher',
+                      requesterName: user.name,
+                      targetId: selectedStudent.id || selectedStudent._id,
+                      targetType: 'student',
+                      targetName: selectedStudent.name,
+                      subjects: requestData.subjects,
+                      message: requestData.message,
+                    });
+
+                    if (result.success) {
+                      toast.success('Request sent successfully! Admin will review and allocate the student.');
+                      setShowRequestForm(false);
+                      const requestsData = await getRequestsByUser(user.id || user._id, 'teacher');
+                      setRequests(requestsData);
+                      setRequestData({ subjects: [], message: '' });
+                      setSelectedStudent(null);
+                    } else {
+                      toast.error(result.message || 'Failed to send request. Please try again.');
+                    }
+                  }}
+                  className="flex-1 bg-gradient-primary text-white py-3 px-6 rounded-lg font-semibold hover:shadow-colored transition-all"
+                >
+                  Send Request
+                </button>
+                <button
+                  onClick={() => {
+                    setShowRequestForm(false);
+                    setSelectedStudent(null);
+                    setRequestData({ subjects: [], message: '' });
+                  }}
+                  className="flex-1 bg-slate-200 text-slate-700 py-3 px-6 rounded-lg font-semibold hover:bg-slate-300 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Suspense fallback={<LoadingSpinner />}>
         <Footer />

@@ -30,6 +30,7 @@ export default function Navbar() {
     { href: '/pricing', label: 'Pricing' },
     { href: '/contact', label: 'Contact' },
     { href: '/faq', label: 'FAQ' },
+    { href: '/admin', label: 'Admin' },
   ];
 
   const authenticatedNavLinks = [
@@ -124,7 +125,7 @@ export default function Navbar() {
                 </li>
                 <li>
                   <Link
-                    href="/student-register"
+                    href="/register"
                     className="px-4 py-2 rounded-lg font-semibold bg-gradient-primary text-white hover:shadow-colored transition-all duration-300"
                   >
                     Sign Up
@@ -226,7 +227,7 @@ export default function Navbar() {
                 </li>
                 <li>
                   <Link
-                    href="/student-register"
+                    href="/register"
                     onClick={() => setIsMenuOpen(false)}
                     className="block px-4 py-2 rounded-lg font-semibold bg-gradient-primary text-white text-center"
                   >

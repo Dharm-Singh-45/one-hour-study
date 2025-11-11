@@ -35,6 +35,9 @@ jest.mock('@/lib/utils', () => ({
   isAuthenticated: jest.fn(),
   getAllStudents: jest.fn(),
   getAllocations: jest.fn(),
+  createRequest: jest.fn(),
+  getRequestsByUser: jest.fn(),
+  extractId: jest.fn((id) => id),
 }))
 
 describe('TeacherDashboard', () => {
@@ -57,9 +60,11 @@ describe('TeacherDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     ;(utils.isAuthenticated as jest.Mock).mockReturnValue(true)
-    ;(utils.getCurrentUser as jest.Mock).mockReturnValue(mockTeacher)
-    ;(utils.getAllStudents as jest.Mock).mockReturnValue(mockStudents)
-    ;(utils.getAllocations as jest.Mock).mockReturnValue([])
+    ;(utils.getCurrentUser as jest.Mock).mockResolvedValue(mockTeacher)
+    ;(utils.getAllStudents as jest.Mock).mockResolvedValue(mockStudents)
+    ;(utils.getAllocations as jest.Mock).mockResolvedValue([])
+    ;(utils.getRequestsByUser as jest.Mock).mockResolvedValue([])
+    ;(utils.createRequest as jest.Mock).mockResolvedValue({ success: true, message: 'Request created successfully!' })
   })
 
   it('should redirect to login if not authenticated', () => {
@@ -70,15 +75,17 @@ describe('TeacherDashboard', () => {
     expect(mockPush).toHaveBeenCalledWith('/login')
   })
 
-  it('should redirect to login if user is not a teacher', () => {
-    ;(utils.getCurrentUser as jest.Mock).mockReturnValue({
+  it('should redirect to login if user is not a teacher', async () => {
+    ;(utils.getCurrentUser as jest.Mock).mockResolvedValue({
       ...mockTeacher,
       type: 'student',
     })
     
     render(<TeacherDashboard />)
     
-    expect(mockPush).toHaveBeenCalledWith('/login')
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/login')
+    })
   })
 
   it('should render dashboard for authenticated teacher', async () => {
@@ -124,7 +131,7 @@ describe('TeacherDashboard', () => {
       },
     ]
 
-    ;(utils.getAllocations as jest.Mock).mockReturnValue(mockAllocations)
+    ;(utils.getAllocations as jest.Mock).mockResolvedValue(mockAllocations)
 
     render(<TeacherDashboard />)
     

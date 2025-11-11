@@ -40,6 +40,18 @@ jest.mock('@/components/Footer', () => {
 jest.mock('@/lib/utils', () => ({
   isValidEmail: jest.fn(),
   loginUser: jest.fn(),
+  focusFirstErrorField: jest.fn(),
+}))
+
+// Mock react-hot-toast
+jest.mock('react-hot-toast', () => ({
+  __esModule: true,
+  default: {
+    success: jest.fn(),
+    error: jest.fn(),
+    loading: jest.fn(),
+  },
+  Toaster: () => null,
 }))
 
 // Mock SEO
@@ -52,7 +64,7 @@ describe('Login', () => {
     jest.clearAllMocks()
     mockPush.mockClear()
     ;(utils.isValidEmail as jest.Mock).mockReturnValue(true)
-    ;(utils.loginUser as jest.Mock).mockReturnValue({
+    ;(utils.loginUser as jest.Mock).mockResolvedValue({
       success: true,
       message: 'Login successful!',
       user: { id: '1', email: 'test@example.com', type: 'student' },
@@ -176,7 +188,7 @@ describe('Login', () => {
   })
 
   it('should redirect to student dashboard on successful student login', async () => {
-    ;(utils.loginUser as jest.Mock).mockReturnValue({
+    ;(utils.loginUser as jest.Mock).mockResolvedValue({
       success: true,
       message: 'Login successful!',
       user: { id: '1', email: 'test@example.com', type: 'student' },
@@ -199,7 +211,7 @@ describe('Login', () => {
   })
 
   it('should redirect to teacher dashboard on successful teacher login', async () => {
-    ;(utils.loginUser as jest.Mock).mockReturnValue({
+    ;(utils.loginUser as jest.Mock).mockResolvedValue({
       success: true,
       message: 'Login successful!',
       user: { id: '1', email: 'test@example.com', type: 'teacher' },
@@ -231,7 +243,7 @@ describe('Login', () => {
   })
 
   it('should show error message on failed login', async () => {
-    ;(utils.loginUser as jest.Mock).mockReturnValue({
+    ;(utils.loginUser as jest.Mock).mockResolvedValue({
       success: false,
       message: 'Invalid email or password',
     })
@@ -271,8 +283,9 @@ describe('Login', () => {
 
   it('should have links to registration pages', () => {
     render(<Login />)
-    expect(screen.getByText(/Student Sign Up/i)).toBeInTheDocument()
-    expect(screen.getByText(/Teacher Sign Up/i)).toBeInTheDocument()
+    expect(screen.getByText(/Sign up as/i)).toBeInTheDocument()
+    const registerLink = screen.getByRole('link', { name: /Sign up as/i })
+    expect(registerLink).toHaveAttribute('href', '/register')
   })
 
   it('should render Navbar and Footer', () => {

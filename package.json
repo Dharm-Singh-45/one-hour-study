@@ -17,9 +17,11 @@
     "seo:check-all": "lighthouse http://localhost:3000 --only-categories=seo --output=html --output-path=./seo-report.html && lighthouse http://localhost:3000/student-register --only-categories=seo --output=html --output-path=./seo-report-student.html && lighthouse http://localhost:3000/teacher-register --only-categories=seo --output=html --output-path=./seo-report-teacher.html && lighthouse http://localhost:3000/pricing --only-categories=seo --output=html --output-path=./seo-report-pricing.html && lighthouse http://localhost:3000/faq --only-categories=seo --output=html --output-path=./seo-report-faq.html && lighthouse http://localhost:3000/contact --only-categories=seo --output=html --output-path=./seo-report-contact.html"
   },
   "dependencies": {
+    "mongoose": "^8.19.3",
     "next": "^14.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
     "twilio": "^5.10.4"
   },

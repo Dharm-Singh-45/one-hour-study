@@ -15,6 +15,9 @@ import {
   type Allocation,
 } from '../utils'
 
+// Mock fetch for API calls
+global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+
 // Mock localStorage
 const localStorageMock = (() => {
   let store: Record<string, string> = {}
@@ -102,107 +105,186 @@ describe('Authentication Functions', () => {
   })
 
   describe('registerUser', () => {
-    it('should register a new user successfully', () => {
+    beforeEach(() => {
+      (global.fetch as jest.Mock).mockClear();
+    });
+
+    it('should register a new user successfully', async () => {
       const userData: User = {
         type: 'student',
         email: 'test@example.com',
         password: 'password123',
         name: 'Test User',
-      }
+      };
 
-      const result = registerUser(userData)
-      expect(result.success).toBe(true)
-      expect(result.message).toBe('Registration successful!')
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          message: 'Registration successful!',
+          user: { ...userData, _id: '123' },
+        }),
+      });
 
-      const users = JSON.parse(localStorage.getItem('oneHourStudyUsers') || '[]')
-      expect(users).toHaveLength(1)
-      expect(users[0].email).toBe('test@example.com')
-      expect(users[0].type).toBe('student')
-    })
+      const result = await registerUser(userData);
+      expect(result.success).toBe(true);
+      expect(result.message).toBe('Registration successful!');
+    });
 
-    it('should prevent duplicate user registration', () => {
+    it('should prevent duplicate user registration', async () => {
       const userData: User = {
         type: 'student',
         email: 'test@example.com',
         password: 'password123',
         name: 'Test User',
-      }
+      };
 
-      registerUser(userData)
-      const result = registerUser(userData)
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            message: 'Registration successful!',
+            user: { ...userData, _id: '123' },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          json: async () => ({
+            success: false,
+            message: 'User with this email already exists',
+          }),
+        });
 
-      expect(result.success).toBe(false)
-      expect(result.message).toBe('User with this email already exists')
-    })
+      await registerUser(userData);
+      const result = await registerUser(userData);
 
-    it('should allow same email for different user types', () => {
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('User with this email already exists');
+    });
+
+    it('should allow same email for different user types', async () => {
       const studentData: User = {
         type: 'student',
         email: 'test@example.com',
         password: 'password123',
         name: 'Student',
-      }
+      };
 
       const teacherData: User = {
         type: 'teacher',
         email: 'test@example.com',
         password: 'password123',
         name: 'Teacher',
-      }
+      };
 
-      const studentResult = registerUser(studentData)
-      const teacherResult = registerUser(teacherData)
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            message: 'Registration successful!',
+            user: { ...studentData, _id: '123' },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            message: 'Registration successful!',
+            user: { ...teacherData, _id: '456' },
+          }),
+        });
 
-      expect(studentResult.success).toBe(true)
-      expect(teacherResult.success).toBe(true)
+      const studentResult = await registerUser(studentData);
+      const teacherResult = await registerUser(teacherData);
 
-      const users = JSON.parse(localStorage.getItem('oneHourStudyUsers') || '[]')
-      expect(users).toHaveLength(2)
-    })
+      expect(studentResult.success).toBe(true);
+      expect(teacherResult.success).toBe(true);
+    });
   })
 
   describe('loginUser', () => {
     beforeEach(() => {
-      const userData: User = {
+      (global.fetch as jest.Mock).mockClear();
+    });
+
+    it('should login with correct credentials', async () => {
+      const userData = {
         type: 'student',
         email: 'test@example.com',
         password: 'password123',
         name: 'Test User',
-      }
-      registerUser(userData)
+        _id: '123',
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          message: 'Login successful!',
+          user: userData,
+        }),
+      });
+
+      const result = await loginUser('test@example.com', 'password123', 'student');
+      
+      expect(result.success).toBe(true);
+      expect(result.message).toBe('Login successful!');
+      expect(result.user).toBeDefined();
+      expect(result.user?.email).toBe('test@example.com');
+
+      const session = JSON.parse(localStorage.getItem('oneHourStudySession') || '{}');
+      expect(session.user).toBeDefined();
     })
 
-    it('should login with correct credentials', () => {
-      const result = loginUser('test@example.com', 'password123', 'student')
-      
-      expect(result.success).toBe(true)
-      expect(result.message).toBe('Login successful!')
-      expect(result.user).toBeDefined()
-      expect(result.user?.email).toBe('test@example.com')
+    it('should fail with incorrect password', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({
+          success: false,
+          message: 'Invalid email or password',
+        }),
+      });
 
-      const session = JSON.parse(localStorage.getItem('oneHourStudySession') || '{}')
-      expect(session.user).toBeDefined()
+      const result = await loginUser('test@example.com', 'wrongpassword', 'student');
+      
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Invalid email or password');
     })
 
-    it('should fail with incorrect password', () => {
-      const result = loginUser('test@example.com', 'wrongpassword', 'student')
+    it('should fail with non-existent user', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({
+          success: false,
+          message: 'User not found',
+        }),
+      });
+
+      const result = await loginUser('nonexistent@example.com', 'password123', 'student');
       
-      expect(result.success).toBe(false)
-      expect(result.message).toBe('Invalid email or password')
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('User not found');
     })
 
-    it('should fail with non-existent user', () => {
-      const result = loginUser('nonexistent@example.com', 'password123', 'student')
-      
-      expect(result.success).toBe(false)
-      expect(result.message).toBe('User not found')
-    })
+    it('should fail with wrong user type', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({
+          success: false,
+          message: 'User not found',
+        }),
+      });
 
-    it('should fail with wrong user type', () => {
-      const result = loginUser('test@example.com', 'password123', 'teacher')
+      const result = await loginUser('test@example.com', 'password123', 'teacher');
       
-      expect(result.success).toBe(false)
-      expect(result.message).toBe('User not found')
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('User not found');
     })
   })
 
@@ -217,43 +299,82 @@ describe('Authentication Functions', () => {
   })
 
   describe('getCurrentUser', () => {
-    it('should return null when no session exists', () => {
-      expect(getCurrentUser()).toBeNull()
+    beforeEach(() => {
+      (global.fetch as jest.Mock).mockClear();
+    });
+
+    it('should return null when no session exists', async () => {
+      const user = await getCurrentUser();
+      expect(user).toBeNull();
     })
 
-    it('should return user when session exists', () => {
-      const userData: User = {
+    it('should return user when session exists', async () => {
+      const userData = {
         type: 'student',
         email: 'test@example.com',
         password: 'password123',
         name: 'Test User',
-        id: 'student_123',
-      }
-      registerUser(userData)
-      loginUser('test@example.com', 'password123', 'student')
+        _id: 'student_123',
+      };
 
-      const user = getCurrentUser()
-      expect(user).toBeDefined()
-      expect(user?.email).toBe('test@example.com')
+      // Mock login
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          message: 'Login successful!',
+          user: userData,
+        }),
+      });
+
+      await loginUser('test@example.com', 'password123', 'student');
+
+      // Mock getCurrentUser API call
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          user: userData,
+        }),
+      });
+
+      const user = await getCurrentUser();
+      expect(user).toBeDefined();
+      expect(user?.email).toBe('test@example.com');
     })
   })
 
   describe('isAuthenticated', () => {
+    beforeEach(() => {
+      localStorage.clear();
+      (global.fetch as jest.Mock).mockClear();
+    });
+
     it('should return false when no user is logged in', () => {
-      expect(isAuthenticated()).toBe(false)
+      expect(isAuthenticated()).toBe(false);
     })
 
-    it('should return true when user is logged in', () => {
-      const userData: User = {
+    it('should return true when user is logged in', async () => {
+      const userData = {
         type: 'student',
         email: 'test@example.com',
         password: 'password123',
         name: 'Test User',
-      }
-      registerUser(userData)
-      loginUser('test@example.com', 'password123', 'student')
+        _id: '123',
+      };
 
-      expect(isAuthenticated()).toBe(true)
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          message: 'Login successful!',
+          user: userData,
+        }),
+      });
+
+      await loginUser('test@example.com', 'password123', 'student');
+
+      expect(isAuthenticated()).toBe(true);
     })
   })
 })
@@ -264,7 +385,11 @@ describe('Allocation Functions', () => {
   })
 
   describe('createAllocation', () => {
-    it('should create a new allocation', () => {
+    beforeEach(() => {
+      (global.fetch as jest.Mock).mockClear();
+    });
+
+    it('should create a new allocation', async () => {
       const allocationData: Omit<Allocation, 'id' | 'createdAt'> = {
         studentId: 'student_1',
         teacherId: 'teacher_1',
@@ -276,17 +401,22 @@ describe('Allocation Functions', () => {
         days: ['Monday', 'Wednesday'],
         startDate: '2024-01-01',
         status: 'active',
-      }
+      };
 
-      const result = createAllocation(allocationData)
-      expect(result.success).toBe(true)
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          message: 'Allocation created successfully!',
+          allocation: { ...allocationData, _id: 'alloc_1' },
+        }),
+      });
 
-      const allocations = JSON.parse(localStorage.getItem('oneHourStudyAllocations') || '[]')
-      expect(allocations).toHaveLength(1)
-      expect(allocations[0].studentId).toBe('student_1')
+      const result = await createAllocation(allocationData);
+      expect(result.success).toBe(true);
     })
 
-    it('should prevent duplicate active allocations', () => {
+    it('should prevent duplicate active allocations', async () => {
       const allocationData: Omit<Allocation, 'id' | 'createdAt'> = {
         studentId: 'student_1',
         teacherId: 'teacher_1',
@@ -298,302 +428,287 @@ describe('Allocation Functions', () => {
         days: ['Monday'],
         startDate: '2024-01-01',
         status: 'active',
-      }
+      };
 
-      createAllocation(allocationData)
-      const result = createAllocation(allocationData)
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            message: 'Allocation created successfully!',
+            allocation: { ...allocationData, _id: 'alloc_1' },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          json: async () => ({
+            success: false,
+            message: 'Allocation already exists for this student-teacher pair',
+          }),
+        });
 
-      expect(result.success).toBe(false)
-      expect(result.message).toBe('Allocation already exists for this student-teacher pair')
+      await createAllocation(allocationData);
+      const result = await createAllocation(allocationData);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Allocation already exists for this student-teacher pair');
     })
   })
 
   describe('getAllTeachers', () => {
-    it('should return all teachers', () => {
-      registerUser({
-        type: 'teacher',
-        email: 'teacher1@example.com',
-        password: 'pass',
-        name: 'Teacher 1',
-      })
-      registerUser({
-        type: 'teacher',
-        email: 'teacher2@example.com',
-        password: 'pass',
-        name: 'Teacher 2',
-      })
-      registerUser({
-        type: 'student',
-        email: 'student@example.com',
-        password: 'pass',
-        name: 'Student',
-      })
+    beforeEach(() => {
+      (global.fetch as jest.Mock).mockClear();
+    });
 
-      const teachers = getAllTeachers()
-      expect(teachers).toHaveLength(2)
-      expect(teachers.every(t => t.type === 'teacher')).toBe(true)
+    it('should return all teachers', async () => {
+      const teachers = [
+        { type: 'teacher', email: 'teacher1@example.com', name: 'Teacher 1', _id: '1' },
+        { type: 'teacher', email: 'teacher2@example.com', name: 'Teacher 2', _id: '2' },
+      ];
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          users: teachers,
+        }),
+      });
+
+      const result = await getAllTeachers();
+      expect(result).toHaveLength(2);
+      expect(result.every(t => t.type === 'teacher')).toBe(true);
     })
 
-    it('should return empty array when no teachers exist', () => {
-      expect(getAllTeachers()).toEqual([])
+    it('should return empty array when no teachers exist', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          users: [],
+        }),
+      });
+
+      const result = await getAllTeachers();
+      expect(result).toEqual([]);
     })
   })
 
   describe('getAllStudents', () => {
-    it('should return all students', () => {
-      registerUser({
-        type: 'student',
-        email: 'student1@example.com',
-        password: 'pass',
-        name: 'Student 1',
-      })
-      registerUser({
-        type: 'student',
-        email: 'student2@example.com',
-        password: 'pass',
-        name: 'Student 2',
-      })
-      registerUser({
-        type: 'teacher',
-        email: 'teacher@example.com',
-        password: 'pass',
-        name: 'Teacher',
-      })
+    beforeEach(() => {
+      (global.fetch as jest.Mock).mockClear();
+    });
 
-      const students = getAllStudents()
-      expect(students).toHaveLength(2)
-      expect(students.every(s => s.type === 'student')).toBe(true)
+    it('should return all students', async () => {
+      const students = [
+        { type: 'student', email: 'student1@example.com', name: 'Student 1', _id: '1' },
+        { type: 'student', email: 'student2@example.com', name: 'Student 2', _id: '2' },
+      ];
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          users: students,
+        }),
+      });
+
+      const result = await getAllStudents();
+      expect(result).toHaveLength(2);
+      expect(result.every(s => s.type === 'student')).toBe(true);
     })
 
-    it('should return empty array when no students exist', () => {
-      expect(getAllStudents()).toEqual([])
+    it('should return empty array when no students exist', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          users: [],
+        }),
+      });
+
+      const result = await getAllStudents();
+      expect(result).toEqual([]);
     })
 
-    it('should handle errors gracefully', () => {
-      // Mock localStorage.getItem to throw an error
-      const originalGetItem = localStorage.getItem
-      localStorage.getItem = jest.fn(() => {
-        throw new Error('Storage error')
-      })
+    it('should handle errors gracefully', async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
-      const students = getAllStudents()
-      expect(students).toEqual([])
-
-      // Restore original function
-      localStorage.getItem = originalGetItem
+      const students = await getAllStudents();
+      expect(students).toEqual([]);
     })
   })
 
-  describe('getAllTeachers', () => {
-    it('should handle errors gracefully', () => {
-      // Mock localStorage.getItem to throw an error
-      const originalGetItem = localStorage.getItem
-      localStorage.getItem = jest.fn(() => {
-        throw new Error('Storage error')
-      })
+  describe('getAllTeachers error handling', () => {
+    beforeEach(() => {
+      (global.fetch as jest.Mock).mockClear();
+    });
 
-      const teachers = getAllTeachers()
-      expect(teachers).toEqual([])
+    it('should handle errors gracefully', async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
-      // Restore original function
-      localStorage.getItem = originalGetItem
+      const teachers = await getAllTeachers();
+      expect(teachers).toEqual([]);
     })
   })
 
   describe('getAllocations', () => {
     beforeEach(() => {
-      localStorage.clear()
+      localStorage.clear();
+      (global.fetch as jest.Mock).mockClear();
+    });
+
+    it('should return allocations for a student', async () => {
+      const studentId = 'student_1';
+      const allocations = [
+        {
+          studentId: studentId,
+          teacherId: 'teacher_1',
+          studentName: 'Student',
+          teacherName: 'Teacher',
+          subjects: ['Math'],
+          fees: 1000,
+          time: '10:00 AM',
+          days: ['Monday'],
+          startDate: '2024-01-01',
+          status: 'active',
+          _id: 'alloc_1',
+        },
+      ];
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          allocations,
+        }),
+      });
+
+      const result = await getAllocations(studentId, 'student');
+      
+      expect(result).toHaveLength(1);
+      expect(result[0].studentId).toBe(studentId);
     })
 
-    it('should return allocations for a student', () => {
-      const userData: User = {
-        type: 'student',
-        email: 'student@example.com',
-        password: 'pass',
-        name: 'Student',
-      }
-      const result = registerUser(userData)
-      expect(result.success).toBe(true)
-      
-      loginUser('student@example.com', 'pass', 'student')
-      
-      // Get the actual user ID from the registered user
-      const user = getCurrentUser()
-      expect(user).toBeDefined()
-      const studentId = user!.id
+    it('should return allocations for a teacher', async () => {
+      const teacherId = 'teacher_1';
+      const allocations = [
+        {
+          studentId: 'student_1',
+          teacherId: teacherId,
+          studentName: 'Student',
+          teacherName: 'Teacher',
+          subjects: ['Math'],
+          fees: 1000,
+          time: '10:00 AM',
+          days: ['Monday'],
+          startDate: '2024-01-01',
+          status: 'active',
+          _id: 'alloc_1',
+        },
+      ];
 
-      const allocationData: Omit<Allocation, 'id' | 'createdAt'> = {
-        studentId: studentId,
-        teacherId: 'teacher_1',
-        studentName: 'Student',
-        teacherName: 'Teacher',
-        subjects: ['Math'],
-        fees: 1000,
-        time: '10:00 AM',
-        days: ['Monday'],
-        startDate: '2024-01-01',
-        status: 'active',
-      }
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          allocations,
+        }),
+      });
 
-      createAllocation(allocationData)
-      const allocations = getAllocations(studentId, 'student')
+      const result = await getAllocations(teacherId, 'teacher');
       
-      expect(allocations).toHaveLength(1)
-      expect(allocations[0].studentId).toBe(studentId)
+      expect(result).toHaveLength(1);
+      expect(result[0].teacherId).toBe(teacherId);
     })
 
-    it('should return allocations for a teacher', () => {
-      const teacherData: User = {
-        type: 'teacher',
-        email: 'teacher@example.com',
-        password: 'pass',
-        name: 'Teacher',
-      }
-      registerUser(teacherData)
-      loginUser('teacher@example.com', 'pass', 'teacher')
+    it('should return empty array when no allocations exist', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          allocations: [],
+        }),
+      });
 
-      // Get the actual user ID from the registered user
-      const user = getCurrentUser()
-      expect(user).toBeDefined()
-      const teacherId = user!.id
-
-      const allocationData: Omit<Allocation, 'id' | 'createdAt'> = {
-        studentId: 'student_1',
-        teacherId: teacherId,
-        studentName: 'Student',
-        teacherName: 'Teacher',
-        subjects: ['Math'],
-        fees: 1000,
-        time: '10:00 AM',
-        days: ['Monday'],
-        startDate: '2024-01-01',
-        status: 'active',
-      }
-
-      createAllocation(allocationData)
-      const allocations = getAllocations(teacherId, 'teacher')
-      
-      expect(allocations).toHaveLength(1)
-      expect(allocations[0].teacherId).toBe(teacherId)
+      const allocations = await getAllocations('student_1', 'student');
+      expect(allocations).toEqual([]);
     })
 
-    it('should return empty array when user is not logged in', () => {
-      logoutUser()
-      const allocations = getAllocations('student_1', 'student')
-      expect(allocations).toEqual([])
+    it('should only return active allocations', async () => {
+      const studentId = 'student_1';
+      const allocations = [
+        {
+          studentId: studentId,
+          teacherId: 'teacher_1',
+          studentName: 'Student',
+          teacherName: 'Teacher',
+          subjects: ['Math'],
+          fees: 1000,
+          time: '10:00 AM',
+          days: ['Monday'],
+          startDate: '2024-01-01',
+          status: 'active',
+          _id: 'alloc_1',
+        },
+      ];
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          allocations,
+        }),
+      });
+
+      const activeAllocations = await getAllocations(studentId, 'student');
+      expect(activeAllocations).toHaveLength(1);
+      expect(activeAllocations[0].status).toBe('active');
     })
 
-    it('should only return active allocations', () => {
-      const userData: User = {
-        type: 'student',
-        email: 'student@example.com',
-        password: 'pass',
-        name: 'Student',
-      }
-      registerUser(userData)
-      loginUser('student@example.com', 'pass', 'student')
+    it('should handle errors gracefully', async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
-      // Get the actual user ID from the registered user
-      const user = getCurrentUser()
-      expect(user).toBeDefined()
-      const studentId = user!.id
-
-      const allocationData: Omit<Allocation, 'id' | 'createdAt'> = {
-        studentId: studentId,
-        teacherId: 'teacher_1',
-        studentName: 'Student',
-        teacherName: 'Teacher',
-        subjects: ['Math'],
-        fees: 1000,
-        time: '10:00 AM',
-        days: ['Monday'],
-        startDate: '2024-01-01',
-        status: 'active',
-      }
-
-      createAllocation(allocationData)
-      
-      // Manually add a completed allocation to localStorage
-      const allocations = JSON.parse(localStorage.getItem('oneHourStudyAllocations') || '[]')
-      const completedAllocation: Allocation = {
-        ...allocationData,
-        id: 'alloc_completed',
-        createdAt: new Date().toISOString(),
-        status: 'completed',
-      }
-      allocations.push(completedAllocation)
-      localStorage.setItem('oneHourStudyAllocations', JSON.stringify(allocations))
-
-      const activeAllocations = getAllocations(studentId, 'student')
-      expect(activeAllocations).toHaveLength(1)
-      expect(activeAllocations[0].status).toBe('active')
-    })
-
-    it('should handle errors gracefully', () => {
-      const originalGetItem = localStorage.getItem
-      localStorage.getItem = jest.fn(() => {
-        throw new Error('Storage error')
-      })
-
-      const allocations = getAllocations('student_1', 'student')
-      expect(allocations).toEqual([])
-
-      localStorage.getItem = originalGetItem
+      const allocations = await getAllocations('student_1', 'student');
+      expect(allocations).toEqual([]);
     })
   })
 
   describe('Error handling', () => {
-    it('should handle errors in registerUser', () => {
-      const originalSetItem = localStorage.setItem
-      localStorage.setItem = jest.fn(() => {
-        throw new Error('Storage error')
-      })
+    it('should handle errors in registerUser', async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
-      const result = registerUser({
+      const result = await registerUser({
         type: 'student',
         email: 'test@example.com',
         password: 'pass',
         name: 'Test',
-      })
+      });
 
-      expect(result.success).toBe(false)
-      expect(result.message).toBe('Registration failed. Please try again.')
-
-      localStorage.setItem = originalSetItem
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Registration failed. Please try again.');
     })
 
-    it('should handle errors in loginUser', () => {
-      const originalGetItem = localStorage.getItem
-      localStorage.getItem = jest.fn(() => {
-        throw new Error('Storage error')
-      })
+    it('should handle errors in loginUser', async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
-      const result = loginUser('test@example.com', 'pass', 'student')
-      expect(result.success).toBe(false)
-      expect(result.message).toBe('Login failed. Please try again.')
-
-      localStorage.getItem = originalGetItem
+      const result = await loginUser('test@example.com', 'pass', 'student');
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Login failed. Please try again.');
     })
 
-    it('should handle errors in getCurrentUser', () => {
-      const originalGetItem = localStorage.getItem
-      localStorage.getItem = jest.fn(() => {
-        throw new Error('Storage error')
-      })
+    it('should handle errors in getCurrentUser', async () => {
+      localStorage.setItem('oneHourStudySession', JSON.stringify({ user: { id: '123' } }));
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
-      const user = getCurrentUser()
-      expect(user).toBeNull()
-
-      localStorage.getItem = originalGetItem
+      const user = await getCurrentUser();
+      expect(user).toBeNull();
     })
 
-    it('should handle errors in createAllocation', () => {
-      const originalSetItem = localStorage.setItem
-      localStorage.setItem = jest.fn(() => {
-        throw new Error('Storage error')
-      })
+    it('should handle errors in createAllocation', async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
-      const result = createAllocation({
+      const result = await createAllocation({
         studentId: 'student_1',
         teacherId: 'teacher_1',
         studentName: 'Student',
@@ -604,24 +719,22 @@ describe('Allocation Functions', () => {
         days: ['Monday'],
         startDate: '2024-01-01',
         status: 'active',
-      })
+      });
 
-      expect(result.success).toBe(false)
-      expect(result.message).toBe('Failed to create allocation')
-
-      localStorage.setItem = originalSetItem
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Failed to create allocation');
     })
 
     it('should handle errors in saveToLocalStorage', () => {
-      const originalSetItem = localStorage.setItem
+      const originalSetItem = localStorage.setItem;
       localStorage.setItem = jest.fn(() => {
-        throw new Error('Storage error')
-      })
+        throw new Error('Storage error');
+      });
 
-      const result = saveToLocalStorage('test-key', { name: 'Test' })
-      expect(result).toBe(false)
+      const result = saveToLocalStorage('test-key', { name: 'Test' });
+      expect(result).toBe(false);
 
-      localStorage.setItem = originalSetItem
+      localStorage.setItem = originalSetItem;
     })
   })
 })

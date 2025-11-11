@@ -65,3 +65,23 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 })
 
+// Mock requestAnimationFrame
+global.requestAnimationFrame = jest.fn((cb) => {
+  setTimeout(cb, 0);
+  return 1;
+});
+
+// Mock react-hot-toast
+jest.mock('react-hot-toast', () => ({
+  __esModule: true,
+  default: {
+    success: jest.fn(),
+    error: jest.fn(),
+    loading: jest.fn(),
+  },
+  Toaster: () => null,
+}))
+
+// Mock fetch globally for API calls
+global.fetch = jest.fn();
+

@@ -45,6 +45,18 @@ jest.mock('@/lib/utils', () => ({
   isValidPhone: jest.fn(),
   saveToLocalStorage: jest.fn(() => true),
   registerUser: jest.fn(),
+  focusFirstErrorField: jest.fn(),
+}))
+
+// Mock react-hot-toast
+jest.mock('react-hot-toast', () => ({
+  __esModule: true,
+  default: {
+    success: jest.fn(),
+    error: jest.fn(),
+    loading: jest.fn(),
+  },
+  Toaster: () => null,
 }))
 
 jest.mock('@/lib/seo', () => ({
@@ -63,7 +75,7 @@ describe('TeacherRegister', () => {
     jest.clearAllMocks()
     ;(utils.isValidEmail as jest.Mock).mockReturnValue(true)
     ;(utils.isValidPhone as jest.Mock).mockReturnValue(true)
-    ;(utils.registerUser as jest.Mock).mockReturnValue({ success: true, message: 'Registration successful!' })
+    ;(utils.registerUser as jest.Mock).mockResolvedValue({ success: true, message: 'Registration successful!' })
   })
 
   it('should render registration form', () => {
@@ -454,7 +466,7 @@ describe('TeacherRegister', () => {
   })
 
   it('should show error message on failed registration', async () => {
-    ;(utils.registerUser as jest.Mock).mockReturnValue({
+    ;(utils.registerUser as jest.Mock).mockResolvedValue({
       success: false,
       message: 'User with this email already exists',
     })

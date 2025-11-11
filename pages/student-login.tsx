@@ -50,11 +50,11 @@ export default function StudentLogin() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
       setIsLoading(true);
-      const result = loginUser(formData.email, formData.password, 'student');
+      const result = await loginUser(formData.email, formData.password, 'student');
       
       if (result.success) {
         router.push('/student-dashboard');

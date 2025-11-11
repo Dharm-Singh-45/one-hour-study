@@ -32,9 +32,9 @@ describe('SEO Configuration', () => {
 
     it('should have home page SEO', () => {
       const home = pageSEO.home
-      expect(home.title).toContain('Home Tutors in Jodhpur')
+      expect(home.title).toContain('Home Tutor')
       expect(home.description).toContain('Jodhpur')
-      expect(home.keywords).toContain('home tutors in Jodhpur')
+      expect(home.keywords).toContain('home tutor')
     })
 
     it('should have student register page SEO', () => {
@@ -51,7 +51,7 @@ describe('SEO Configuration', () => {
 
     it('should have pricing page SEO', () => {
       const pricing = pageSEO.pricing
-      expect(pricing.title).toContain('Tutoring Plans')
+      expect(pricing.title).toContain('Pricing')
       expect(pricing.description).toContain('pricing')
     })
 
