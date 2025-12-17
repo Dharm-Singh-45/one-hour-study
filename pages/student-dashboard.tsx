@@ -45,12 +45,33 @@ export default function StudentDashboard() {
         }
         
         setUser(currentUser);
-        const teachersData = await getAllTeachers();
-        setTeachers(teachersData);
+        // For rollout: Don't fetch all teachers - only show allocated teachers
+        // const teachersData = await getAllTeachers();
+        // setTeachers(teachersData);
         const allocationsData = await getAllocations(currentUser.id || currentUser._id, 'student');
         setAllocations(allocationsData);
         const requestsData = await getRequestsByUser(currentUser.id || currentUser._id, 'student');
         setRequests(requestsData);
+        
+        // Only get teachers that are allocated to this student
+        const allocatedTeacherIds = allocationsData.map((a: any) => {
+          const teacherId = a.teacherId;
+          if (typeof teacherId === 'string') return teacherId;
+          if (teacherId && typeof teacherId === 'object') {
+            return teacherId._id || teacherId.id || null;
+          }
+          return null;
+        }).filter(Boolean) as string[];
+        if (allocatedTeacherIds.length > 0) {
+          const allocatedTeachers = await Promise.all(
+            allocatedTeacherIds.map(async (teacherId: string) => {
+              const response = await fetch(`/api/users?id=${teacherId}`);
+              const result = await response.json();
+              return result.success ? result.user : null;
+            })
+          );
+          setTeachers(allocatedTeachers.filter(Boolean));
+        }
       }
     };
     
@@ -89,23 +110,24 @@ export default function StudentDashboard() {
     }
   };
 
-  const filteredTeachers = teachers.filter(teacher => {
-    const matchesSearch = teacher.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         teacher.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         teacher.city?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSubject = !selectedSubject || teacher.subjects?.includes(selectedSubject);
-    
-    // Filter by student's city (area preference)
-    const matchesCity = !user.city || teacher.city?.toLowerCase() === user.city?.toLowerCase() || !teacher.city;
-    
-    // Filter by student's subjects (requirements)
-    const matchesStudentSubjects = !user.subjects || user.subjects.length === 0 || 
-      teacher.subjects?.some((subject: string) => user.subjects?.includes(subject));
-    
-    return matchesSearch && matchesSubject && matchesCity && matchesStudentSubjects;
-  });
+  // Filtering logic commented out since we're not showing available teachers
+  // const filteredTeachers = teachers.filter(teacher => {
+  //   const matchesSearch = teacher.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //                        teacher.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //                        teacher.city?.toLowerCase().includes(searchTerm.toLowerCase());
+  //   const matchesSubject = !selectedSubject || teacher.subjects?.includes(selectedSubject);
+  //   
+  //   // Filter by student's city (area preference)
+  //   const matchesCity = !user.city || teacher.city?.toLowerCase() === user.city?.toLowerCase() || !teacher.city;
+  //   
+  //   // Filter by student's subjects (requirements)
+  //   const matchesStudentSubjects = !user.subjects || user.subjects.length === 0 || 
+  //     teacher.subjects?.some((subject: string) => user.subjects?.includes(subject));
+  //   
+  //   return matchesSearch && matchesSubject && matchesCity && matchesStudentSubjects;
+  // });
 
-  const allSubjects = Array.from(new Set(teachers.flatMap(t => t.subjects || [])));
+  // const allSubjects = Array.from(new Set(teachers.flatMap(t => t.subjects || [])));
 
   if (!user) {
     return (
@@ -240,7 +262,9 @@ export default function StudentDashboard() {
               </div>
             )}
 
-            {/* Available Teachers Section */}
+            {/* Available Teachers Section - Hidden for rollout */}
+            {/* Students should only see their allocated teachers, not browse all teachers */}
+            {/* 
             <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl border-2 border-primary/10">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                 <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
@@ -362,6 +386,17 @@ export default function StudentDashboard() {
                   })}
                 </div>
               )}
+            </div>
+            */}
+
+            {/* Coming Soon Message */}
+            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl border-2 border-primary/10">
+              <div className="text-center py-12">
+                <span className="fas fa-clock text-5xl text-primary mb-4" aria-hidden="true"></span>
+                <h2 className="text-2xl font-bold text-slate-800 mb-3">Browse Available Teachers</h2>
+                <p className="text-slate-600 text-lg mb-2">This feature will be available soon!</p>
+                <p className="text-slate-500 text-sm">You can currently view your allocated teachers above.</p>
+              </div>
             </div>
           </div>
         </div>

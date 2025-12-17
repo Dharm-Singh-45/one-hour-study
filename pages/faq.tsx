@@ -115,7 +115,7 @@ export default function FAQ() {
       questions: [
         {
           question: 'How can I contact support?',
-          answer: 'You can contact our support team through the Contact page on our website. We also provide email support at support@onehourstudy.com and phone support at our helpline number. We typically respond within 24 hours.',
+          answer: 'You can contact our support team through the Contact page on our website. We also provide email support at onehourstudy@gmail.com and phone support at our helpline number. We typically respond within 24 hours.',
         },
         {
           question: 'What if I face issues with my tutor?',

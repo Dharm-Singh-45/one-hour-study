@@ -27,14 +27,14 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'Home' },
-    { href: '/pricing', label: 'Pricing' },
+    // { href: '/pricing', label: 'Pricing' },
     { href: '/contact', label: 'Contact' },
     { href: '/faq', label: 'FAQ' },
-    { href: '/admin', label: 'Admin' },
+    // { href: '/admin', label: 'Admin' },
   ];
 
   const authenticatedNavLinks = [
-    { href: '/pricing', label: 'Pricing' },
+    // { href: '/pricing', label: 'Pricing' },
     { href: '/faq', label: 'FAQ' },
   ];
 

@@ -283,8 +283,8 @@ export default function Contact() {
                   <div>
                     <h4 className="font-bold text-slate-800 mb-2">Phone</h4>
                     <p className="text-slate-600">
-                      +91 123 456 7890<br />
-                      +91 987 654 3210
+                      +91 9462686862<br />
+                      +91 7073399034
                     </p>
                   </div>
                 </div>
@@ -296,8 +296,7 @@ export default function Contact() {
                   <div>
                     <h4 className="font-bold text-slate-800 mb-2">Email</h4>
                     <p className="text-slate-600">
-                      info@onehourstudy.com<br />
-                      support@onehourstudy.com
+                      onehourstudy@gmail.com
                     </p>
                   </div>
                 </div>
@@ -316,6 +315,8 @@ export default function Contact() {
                   </div>
                 </div>
 
+                {/* Follow Us Section - Commented out */}
+                {/* 
                 <div className="pt-6 border-t border-slate-200">
                   <h4 className="font-bold text-slate-800 mb-4">Follow Us</h4>
                   <div className="flex gap-4">
@@ -336,6 +337,7 @@ export default function Contact() {
                     ))}
                   </div>
                 </div>
+                */}
               </div>
             </div>
             </div>

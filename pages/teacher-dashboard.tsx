@@ -48,31 +48,53 @@ export default function TeacherDashboard() {
         }
         
         setUser(currentUser);
-        const studentsData = await getAllStudents();
-        setStudents(studentsData);
+        // For rollout: Don't fetch all students - only show allocated students
+        // const studentsData = await getAllStudents();
+        // setStudents(studentsData);
         const allocationsData = await getAllocations(currentUser.id || currentUser._id, 'teacher');
         setAllocations(allocationsData);
         const requestsData = await getRequestsByUser(currentUser.id || currentUser._id, 'teacher');
         setRequests(requestsData);
+        
+        // Only get students that are allocated to this teacher
+        const allocatedStudentIds = allocationsData.map((a: any) => {
+          const studentId = a.studentId;
+          if (typeof studentId === 'string') return studentId;
+          if (studentId && typeof studentId === 'object') {
+            return studentId._id || studentId.id || null;
+          }
+          return null;
+        }).filter(Boolean) as string[];
+        if (allocatedStudentIds.length > 0) {
+          const allocatedStudents = await Promise.all(
+            allocatedStudentIds.map(async (studentId: string) => {
+              const response = await fetch(`/api/users?id=${studentId}`);
+              const result = await response.json();
+              return result.success ? result.user : null;
+            })
+          );
+          setStudents(allocatedStudents.filter(Boolean));
+        }
       }
     };
     
     loadData();
   }, [router]);
 
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.city?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSubject = !selectedSubject || student.subjects?.some((s: string) => 
-      user.subjects?.includes(s)
-    );
-    const matchesClass = !selectedClass || student.class === selectedClass;
-    return matchesSearch && matchesSubject && matchesClass;
-  });
+  // Filtering logic commented out since we're not showing available students
+  // const filteredStudents = students.filter(student => {
+  //   const matchesSearch = student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //                        student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //                        student.city?.toLowerCase().includes(searchTerm.toLowerCase());
+  //   const matchesSubject = !selectedSubject || student.subjects?.some((s: string) => 
+  //     user.subjects?.includes(s)
+  //   );
+  //   const matchesClass = !selectedClass || student.class === selectedClass;
+  //   return matchesSearch && matchesSubject && matchesClass;
+  // });
 
-  const allSubjects = Array.from(new Set(students.flatMap(s => s.subjects || [])));
-  const allClasses = Array.from(new Set(students.map(s => s.class).filter(Boolean))).sort((a, b) => Number(a) - Number(b));
+  // const allSubjects = Array.from(new Set(students.flatMap(s => s.subjects || [])));
+  // const allClasses = Array.from(new Set(students.map(s => s.class).filter(Boolean))).sort((a, b) => Number(a) - Number(b));
 
   const handleSendPaymentReminder = async (allocation: any) => {
     const studentId = allocation.studentId?._id || allocation.studentId;
@@ -343,7 +365,9 @@ export default function TeacherDashboard() {
               </div>
             )}
 
-            {/* Available Students Section */}
+            {/* Available Students Section - Hidden for rollout */}
+            {/* Teachers should only see their allocated students, not browse all students */}
+            {/* 
             <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl border-2 border-primary/10">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                 <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
@@ -470,6 +494,17 @@ export default function TeacherDashboard() {
                   })}
                 </div>
               )}
+            </div>
+            */}
+
+            {/* Coming Soon Message */}
+            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl border-2 border-primary/10">
+              <div className="text-center py-12">
+                <span className="fas fa-clock text-5xl text-primary mb-4" aria-hidden="true"></span>
+                <h2 className="text-2xl font-bold text-slate-800 mb-3">Browse Available Students</h2>
+                <p className="text-slate-600 text-lg mb-2">This feature will be available soon!</p>
+                <p className="text-slate-500 text-sm">You can currently view your allocated students above.</p>
+              </div>
             </div>
           </div>
         </div>
