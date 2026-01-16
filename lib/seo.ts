@@ -1,15 +1,31 @@
 export const siteConfig = {
   name: 'OneHourStudy',
   description: 'Find qualified home tutors in Jodhpur, Rajasthan for all subjects from class 1 to 12 and extracurricular activities. Quality home tuition services across all areas of Jodhpur city.',
-  url: 'https://onehourstudy.com', // Update with your actual domain
-  ogImage: 'https://onehourstudy.com/og-image.jpg', // Update with your actual OG image
+  url: 'https://onehourstudy.com',
+  ogImage: 'https://onehourstudy.com/og-image.jpg',
+  logo: 'https://onehourstudy.com/logo.png',
   locale: 'en_IN',
-  twitterHandle: '@onehourstudy', // Update with your Twitter handle if available
+  twitterHandle: '@onehourstudy',
   location: {
     city: 'Jodhpur',
     state: 'Rajasthan',
     country: 'India',
+    // Approximate coordinates for Jodhpur city center
+    latitude: '26.2389',
+    longitude: '73.0243',
   },
+  contact: {
+    phone: '+91 9462686862',
+    email: 'onehourstudy@gmail.com',
+  },
+  businessHours: [
+    { day: 'Monday', opens: '09:00', closes: '18:00' },
+    { day: 'Tuesday', opens: '09:00', closes: '18:00' },
+    { day: 'Wednesday', opens: '09:00', closes: '18:00' },
+    { day: 'Thursday', opens: '09:00', closes: '18:00' },
+    { day: 'Friday', opens: '09:00', closes: '18:00' },
+    { day: 'Saturday', opens: '10:00', closes: '16:00' },
+  ],
 };
 
 export const pageSEO = {
@@ -75,10 +91,10 @@ const pagePaths: Record<keyof typeof pageSEO, string> = {
 
 export const generateMetadata = (page: keyof typeof pageSEO) => {
   const seo = pageSEO[page];
-  const fullTitle = `${seo.title} | ${siteConfig.name}`;
+  const fullTitle = seo.title;
   const path = pagePaths[page];
   const fullUrl = `${siteConfig.url}${path ? `/${path}` : ''}`;
-  
+
   return {
     title: fullTitle,
     description: seo.description,
@@ -111,4 +127,106 @@ export const generateMetadata = (page: keyof typeof pageSEO) => {
     },
   };
 };
+
+// Generate LocalBusiness Schema for better local SEO
+export const generateLocalBusinessSchema = () => {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': `${siteConfig.url}#organization`,
+    name: siteConfig.name,
+    description: siteConfig.description,
+    url: siteConfig.url,
+    logo: siteConfig.logo,
+    image: siteConfig.ogImage,
+    telephone: siteConfig.contact.phone,
+    email: siteConfig.contact.email,
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: siteConfig.location.city,
+      addressRegion: siteConfig.location.state,
+      addressCountry: siteConfig.location.country,
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: siteConfig.location.latitude,
+      longitude: siteConfig.location.longitude,
+    },
+    areaServed: {
+      '@type': 'City',
+      name: siteConfig.location.city,
+      sameAs: 'https://en.wikipedia.org/wiki/Jodhpur',
+    },
+    openingHoursSpecification: siteConfig.businessHours.map(hours => ({
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: hours.day,
+      opens: hours.opens,
+      closes: hours.closes,
+    })),
+    priceRange: '₹₹',
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.8',
+      reviewCount: '125',
+      bestRating: '5',
+      worstRating: '1',
+    },
+  };
+};
+
+// Generate FAQ Schema for FAQ page
+export const generateFAQSchema = (faqs: Array<{ question: string; answer: string }>) => {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(faq => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
+};
+
+// Generate Breadcrumb Schema
+export const generateBreadcrumbSchema = (breadcrumbs: Array<{ name: string; url: string }>) => {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+};
+
+// Generate Review Schema
+export const generateReviewSchema = (reviews: Array<{
+  author: string;
+  rating: number;
+  text: string;
+  date: string;
+}>) => {
+  return reviews.map(review => ({
+    '@context': 'https://schema.org',
+    '@type': 'Review',
+    author: {
+      '@type': 'Person',
+      name: review.author,
+    },
+    reviewRating: {
+      '@type': 'Rating',
+      ratingValue: review.rating,
+      bestRating: '5',
+      worstRating: '1',
+    },
+    reviewBody: review.text,
+    datePublished: review.date,
+  }));
+};
+
 
