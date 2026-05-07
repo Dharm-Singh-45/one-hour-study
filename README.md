@@ -250,5 +250,5 @@ The color scheme and design can be customized in:
 
 ## License
 
-© 2025 OneHourStudy. All rights reserved.
+© 2026 OneHourStudy. All rights reserved.
 

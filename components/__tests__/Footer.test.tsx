@@ -4,7 +4,7 @@ import Footer from '../Footer'
 describe('Footer', () => {
   it('should render footer with copyright text', () => {
     render(<Footer />)
-    expect(screen.getByText(/© 2025 OneHourStudy. All rights reserved./)).toBeInTheDocument()
+    expect(screen.getByText(/© 2026 OneHourStudy. All rights reserved./)).toBeInTheDocument()
   })
 
   it('should render footer element', () => {

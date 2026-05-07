@@ -284,7 +284,8 @@ export default function Contact() {
                     <h4 className="font-bold text-slate-800 mb-2">Phone</h4>
                     <p className="text-slate-600">
                       +91 9462686862<br />
-                      +91 7073399034
+                      +91 7073399034<br />
+                      +91 9950912222
                     </p>
                   </div>
                 </div>
